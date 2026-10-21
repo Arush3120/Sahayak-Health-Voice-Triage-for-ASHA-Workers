@@ -1,0 +1,2326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sahayak · Voice Triage</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Sans+Devanagari:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#082028">
+<style>
+:root{
+  --ink-950:#05161C; --ink-900:#082028; --ink-850:#0B2A33; --ink-800:#0F3540; --ink-700:#174654; --ink-600:#24596A;
+  --paper:#F3EFE6; --paper-2:#E9E3D6; --card:#FFFFFF;
+  --text:#0A2530; --text-2:#33505B; --text-3:#4F6871;
+  --line:rgba(10,37,48,.10); --line-2:rgba(10,37,48,.18);
+  --teal:#0E9F95; --teal-600:#0A7F77; --teal-700:#075F59; --teal-300:#5FE3D0; --teal-100:#D9F3EE;
+  --saffron:#FF8A2B; --saffron-300:#FFB673;
+  --crit:#E5484D; --crit-700:#A61D25; --crit-100:#FCE5E5;
+  --warn:#F2A516; --warn-700:#7A4E00; --warn-100:#FCEFD2;
+  --ok:#1FA971;   --ok-700:#0A6340;   --ok-100:#DAF2E6;
+  --unk:#7B6CF6;  --unk-700:#4436B0;  --unk-100:#ECE9FE;
+  --coral:var(--crit); --amber:var(--warn); --mint:var(--ok); --navy:var(--text); --off:var(--paper);
+  --teal-d:var(--teal-600); --coral-d:var(--crit-700); --amber-d:var(--warn-700); --mint-d:var(--ok-700);
+  --r-xl:30px; --r-lg:24px; --r-md:18px; --r-sm:12px;
+  --shadow-card:0 1px 0 rgba(255,255,255,.8) inset,0 1px 2px rgba(10,37,48,.06),0 14px 34px -18px rgba(10,37,48,.35);
+  --shadow-pop:0 22px 44px -18px rgba(5,22,28,.55);
+  --font-display:'Bricolage Grotesque','IBM Plex Sans Devanagari',system-ui,sans-serif;
+  --font-body:'IBM Plex Sans Devanagari','Noto Sans Devanagari','Noto Sans Bengali',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --jaali:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-opacity='0.075' stroke-width='1'%3E%3Cpath d='M32 0L64 32L32 64L0 32Z'/%3E%3Cpath d='M32 12L52 32L32 52L12 32Z'/%3E%3Ccircle cx='32' cy='32' r='6'/%3E%3Cpath d='M0 0L12 12M64 0L52 12M0 64L12 52M64 64L52 52M32 0V12M32 52V64M0 32H12M52 32H64'/%3E%3C/g%3E%3C/svg%3E");
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font-body);color:var(--text);background:var(--ink-950);-webkit-font-smoothing:antialiased;display:flex;justify-content:center;min-height:100dvh}
+body::before{content:'';position:fixed;inset:0;z-index:-2;background:
+  radial-gradient(48% 44% at 10% 8%,rgba(14,159,149,.32),transparent 70%),
+  radial-gradient(38% 40% at 92% 92%,rgba(255,138,43,.17),transparent 70%),
+  radial-gradient(34% 34% at 92% 6%,rgba(123,108,246,.16),transparent 70%),
+  var(--ink-950)}
+body::after{content:'';position:fixed;inset:0;z-index:-1;background:var(--jaali);-webkit-mask-image:radial-gradient(75% 70% at 50% 50%,#000 30%,transparent 100%);mask-image:radial-gradient(75% 70% at 50% 50%,#000 30%,transparent 100%)}
+button{font-family:inherit;border:none;background:none;cursor:pointer;padding:0;color:inherit;-webkit-tap-highlight-color:transparent}
+a{color:inherit;text-decoration:none}
+p{margin:0}
+input,select,textarea{font-family:inherit}
+:focus-visible{outline:3px solid var(--teal-300);outline-offset:2px}
+.mono{font-family:var(--font-mono)}
+::selection{background:rgba(14,159,149,.3)}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ── keyframes ── */
+@keyframes halo{0%{transform:scale(.9);opacity:.85}100%{transform:scale(1.32);opacity:0}}
+@keyframes ecg{from{stroke-dashoffset:900}to{stroke-dashoffset:0}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes toastin{from{opacity:0;transform:translateY(-14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+@keyframes ringfill{to{stroke-dashoffset:0}}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes sheen{0%{transform:translateX(-120%) skewX(-18deg)}60%,100%{transform:translateX(260%) skewX(-18deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(12px,-10px)}}
+
+/* ── stage (desktop presentation frame around the phone) ── */
+.stage{display:none}
+@media (min-width:1180px){
+  .stage{display:flex;align-items:center;max-width:440px;color:#E6F1F2}
+  .stage-logo{display:flex;align-items:center;gap:12px;font:700 22px var(--font-display);letter-spacing:-.01em;margin-bottom:26px}
+  .stage h1{font:700 44px/1.04 var(--font-display);letter-spacing:-.03em;margin:0 0 18px}
+  .stage h1 span{background:linear-gradient(100deg,var(--teal-300),#A9F5E8 40%,var(--saffron-300));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stage p{font:400 16px/1.65 var(--font-body);color:#A9C0C5;margin:0 0 28px}
+  .stage-feats{list-style:none;margin:0 0 30px;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .stage-feats li{padding:14px 14px 12px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)}
+  .stage-feats b{display:block;font:700 26px/1 var(--font-display);color:#fff;letter-spacing:-.02em}
+  .stage-feats span{display:block;font:500 12px/1.35 var(--font-body);color:#9FB6BC;margin-top:6px}
+  .stage-link{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 20px;border-radius:999px;background:rgba(95,227,208,.12);border:1px solid rgba(95,227,208,.35);color:#CFFAF2;font:600 15px var(--font-body);transition:background .2s}
+  .stage-link:hover{background:rgba(95,227,208,.2)}
+}
+
+/* ── device ── */
+#device{width:100%;max-width:440px;height:100vh;height:100dvh;background:var(--paper);display:flex;flex-direction:column;position:relative;overflow:hidden}
+@media (min-width:560px){
+  body{align-items:center;padding:28px 0;gap:72px}
+  #device{width:392px;height:844px;border-radius:50px;box-shadow:0 0 0 10px #0B1C22,0 0 0 11px rgba(255,255,255,.10),0 50px 120px -30px rgba(0,0,0,.85),0 0 120px -30px rgba(14,159,149,.55)}
+}
+#screen{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
+.body{flex:1;min-height:0;overflow-y:auto;padding:18px 18px 22px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+.body::-webkit-scrollbar,#screen::-webkit-scrollbar{width:0}
+.enter .body > *,.enter .sheet > *,.enter .proc > *{animation:rise .45s cubic-bezier(.2,.8,.2,1) both}
+.enter .body > *:nth-child(2),.enter .sheet > *:nth-child(2),.enter .proc > *:nth-child(2){animation-delay:.04s}.enter .body > *:nth-child(3),.enter .sheet > *:nth-child(3){animation-delay:.08s}.enter .body > *:nth-child(4),.enter .sheet > *:nth-child(4){animation-delay:.12s}.enter .body > *:nth-child(5),.enter .sheet > *:nth-child(5){animation-delay:.16s}.enter .body > *:nth-child(n+6),.enter .sheet > *:nth-child(n+6){animation-delay:.2s}
+
+/* ── status bar ── */
+.sb{height:36px;display:flex;align-items:center;justify-content:space-between;padding:4px 26px 0 30px;flex:none;font:600 12.5px var(--font-mono);color:#fff;position:relative;z-index:2}
+.sb-ic{display:flex;gap:6px;align-items:center}
+.sb-sig{display:flex;align-items:flex-end;gap:2px;height:11px}
+.sb-sig i{display:block;width:3px;border-radius:1px;background:#fff}
+.sb-sig i:nth-child(1){height:4px}.sb-sig i:nth-child(2){height:6px}.sb-sig i:nth-child(3){height:8px}.sb-sig i:nth-child(4){height:11px;opacity:.4}
+.sb-bat{width:24px;height:12px;border-radius:4px;border:1.5px solid rgba(255,255,255,.7);padding:1.5px;position:relative}
+.sb-bat::after{content:'';position:absolute;right:-4px;top:3px;width:2px;height:4px;border-radius:1px;background:rgba(255,255,255,.7)}
+.sb-bat i{display:block;height:100%;width:72%;border-radius:2px;background:#fff}
+
+/* ── hero ── */
+.hero{position:relative;flex:none;color:#fff;isolation:isolate;overflow:hidden;border-radius:0 0 var(--r-xl) var(--r-xl);padding-bottom:34px;
+  background:radial-gradient(110% 90% at 100% 0%,rgba(14,159,149,.55) 0%,transparent 58%),radial-gradient(80% 80% at 0% 110%,rgba(255,138,43,.22) 0%,transparent 60%),linear-gradient(165deg,var(--ink-800) 0%,var(--ink-900) 55%,var(--ink-950) 100%)}
+.hero::before{content:'';position:absolute;inset:0;z-index:-1;background:var(--jaali);-webkit-mask-image:linear-gradient(180deg,#000 10%,transparent 92%);mask-image:linear-gradient(180deg,#000 10%,transparent 92%)}
+.hero::after{content:'';position:absolute;inset:0;z-index:-1;background:var(--grain);opacity:.5;pointer-events:none}
+.hero-tall{padding-bottom:58px}
+.bar{display:flex;align-items:center;gap:12px;padding:8px 18px 0}
+.bar-t{flex:1;min-width:0}
+.h-eyebrow{font:600 10.5px var(--font-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--teal-300)}
+.h-title{font:700 24px/1.1 var(--font-display);letter-spacing:-.02em;color:#fff;margin-top:2px}
+.h-title.sm{font-size:21px;margin-top:0}
+.h-sub{font:500 13px/1.4 var(--font-body);color:rgba(255,255,255,.74);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pulse{position:absolute;left:0;bottom:0;width:100%;height:30px;z-index:-1;pointer-events:none;opacity:.7}
+.pulse path{fill:none;stroke:var(--teal-300);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:180 720;animation:ecg 4.2s linear infinite;filter:drop-shadow(0 0 4px rgba(95,227,208,.9))}
+.pulse path.base{stroke:rgba(95,227,208,.16);stroke-dasharray:none;animation:none;filter:none}
+.icon-btn{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;flex:none;transition:transform .12s}
+.icon-btn:active{transform:scale(.94)}
+.glass{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.chip{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px;border-radius:999px;flex:none;font:600 12.5px var(--font-body);color:#fff;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.17);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.chip .led{width:8px;height:8px;border-radius:50%;background:#8FA5AC;box-shadow:0 0 0 3px rgba(143,165,172,.2)}
+.chip.ok .led{background:var(--teal-300);box-shadow:0 0 0 3px rgba(95,227,208,.22),0 0 12px var(--teal-300)}
+.chip.warn{border-color:rgba(255,182,115,.55);background:rgba(255,138,43,.16)}
+.chip.warn .led{background:var(--saffron-300);box-shadow:0 0 0 3px rgba(255,182,115,.25);animation:blip 1.4s ease-in-out infinite}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;padding:0 22px}
+
+/* steps tracker in hero */
+.steps{display:flex;gap:6px;padding:16px 18px 0}
+.st{flex:1;min-width:0}
+.st i{display:block;height:5px;border-radius:5px;background:rgba(255,255,255,.16);overflow:hidden;position:relative}
+.st.done i{background:var(--teal-300)}
+.st.now i{background:linear-gradient(90deg,var(--teal-300),rgba(95,227,208,.35))}
+.st.now i::after{content:'';position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent);animation:sheen 2.2s ease-in-out infinite}
+.st span{display:block;margin-top:7px;font:600 9.5px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st.done span,.st.now span{color:#fff}
+
+/* ── type, sections, cards ── */
+.sec{display:flex;align-items:center;justify-content:space-between;margin:4px 4px -4px;font:600 11px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--text-3)}
+.link{display:inline-flex;align-items:center;gap:4px;font:600 13px var(--font-body);letter-spacing:0;text-transform:none;color:var(--teal-700)}
+.link svg{width:16px;height:16px}
+.card{background:var(--card);border-radius:var(--r-lg);border:1px solid rgba(10,37,48,.06);box-shadow:var(--shadow-card);padding:16px}
+.card-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.card-t{font:700 16.5px/1.2 var(--font-display);letter-spacing:-.01em;color:var(--text)}
+.card-s{font:500 12.5px var(--font-body);color:var(--text-3);margin-top:2px}
+.eyebrow{font:600 10.5px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--text-3)}
+.fine{text-align:center;font:500 11px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.ib{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;flex:none;background:var(--teal-100);color:var(--teal-700)}
+.ib svg{width:20px;height:20px}
+.ib.ink{background:var(--ink-800);color:var(--teal-300)}
+.ib.crit{background:var(--crit-100);color:var(--crit-700)}.ib.warn{background:var(--warn-100);color:var(--warn-700)}.ib.ok{background:var(--ok-100);color:var(--ok-700)}.ib.unk{background:var(--unk-100);color:var(--unk-700)}
+.ib.sun{background:#FFE9D6;color:#9A4300}
+
+/* severity tokens */
+.sev-HIGH,.sev-red{--sev:var(--crit);--sev-7:var(--crit-700);--sev-1:var(--crit-100)}
+.sev-MEDIUM,.sev-amber{--sev:var(--warn);--sev-7:var(--warn-700);--sev-1:var(--warn-100)}
+.sev-LOW,.sev-green{--sev:var(--ok);--sev-7:var(--ok-700);--sev-1:var(--ok-100)}
+.sev-UNCERTAIN{--sev:var(--unk);--sev-7:var(--unk-700);--sev-1:var(--unk-100)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;font:700 10.5px var(--font-mono);letter-spacing:.07em;background:var(--sev-1);color:var(--sev-7);flex:none}
+.pill .d{width:7px;height:7px;border-radius:50%;background:var(--sev)}
+.tag{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:7px;font:700 9.5px var(--font-mono);letter-spacing:.08em;flex:none}
+.tag svg{width:12px;height:12px;stroke-width:2.6}
+.tag.teal{background:var(--teal-100);color:var(--teal-700)}
+.tag.ok{background:var(--ok-100);color:var(--ok-700)}
+
+/* ── buttons ── */
+.btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:60px;padding:0 22px;border-radius:20px;flex:none;font:700 18px/1.15 var(--font-display);letter-spacing:-.01em;transition:transform .12s ease,box-shadow .2s ease,opacity .2s ease,filter .2s;text-align:center}
+.btn svg{width:22px;height:22px;stroke-width:2.2}
+.btn:active{transform:scale(.985)}
+.btn[disabled]{opacity:.42;cursor:not-allowed;filter:saturate(.5)}
+.btn .bt{display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.btn .sub{display:block;font:600 10.5px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;opacity:.82;margin-top:5px}
+.btn-primary{color:#fff;background:linear-gradient(135deg,#16B9AB 0%,#0E9F95 42%,#0A7A72 100%);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 -3px 0 rgba(0,0,0,.14) inset,0 16px 30px -14px rgba(14,159,149,.8)}
+.btn-primary:not([disabled])::after{content:'';position:absolute;top:0;bottom:0;left:0;width:38%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);animation:sheen 4.5s ease-in-out infinite;pointer-events:none}
+.btn-dark{color:#fff;background:linear-gradient(160deg,var(--ink-700),var(--ink-900));box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 16px 30px -16px rgba(5,22,28,.8)}
+.btn-soft{color:var(--text);background:var(--card);border:1.5px solid var(--line-2);box-shadow:0 1px 2px rgba(10,37,48,.06)}
+.btn-ghost{color:var(--text-2);background:transparent;border:1.5px solid var(--line-2);min-height:54px;font-size:16px}
+.btn-danger{color:var(--crit-700);background:var(--crit-100);border:1.5px solid rgba(229,72,77,.25);min-height:52px;font-size:15.5px}
+.btn-wa{color:#fff;background:linear-gradient(135deg,#1DB46A 0%,#128C4A 100%);box-shadow:0 16px 30px -14px rgba(18,140,74,.75)}
+.btn-xl{min-height:86px;border-radius:24px;font-size:22px;justify-content:flex-start;padding:0 22px}
+.btn-xl .go{margin-left:auto;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.18)}
+.btn-xl .lead{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.18);flex:none}
+.btn-xl .lead svg{width:24px;height:24px}
+
+/* ── login ── */
+.login-brand{display:flex;align-items:center;gap:14px;padding:22px 22px 0}
+.wordmark{font:800 38px/1 var(--font-display);letter-spacing:-.035em;color:#fff}
+.login-tag{padding:20px 22px 18px;font:600 23px/1.25 var(--font-display);letter-spacing:-.02em;color:#fff}
+.login-tag em{font-style:normal;background:linear-gradient(100deg,var(--teal-300),#B8FFF2 45%,var(--saffron-300));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sheet{flex:1;min-height:0;overflow-y:auto;margin-top:-34px;position:relative;z-index:2;background:var(--paper);border-radius:32px 32px 0 0;padding:20px 20px 18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 -20px 40px -20px rgba(5,22,28,.4)}
+.sheet::-webkit-scrollbar{width:0}
+.worker-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:var(--card);box-shadow:var(--shadow-card);border:1px solid rgba(10,37,48,.06)}
+.worker-card .avatar{width:42px;height:42px;border-radius:14px}
+.wc-t{flex:1}
+.wc-id{font:700 18px var(--font-mono);letter-spacing:.02em;color:var(--text)}
+.verified{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--ok-100);color:var(--ok-700)}
+.verified svg{width:16px;height:16px;stroke-width:3}
+.pin-head{text-align:center}
+.pin-title{font:700 20px var(--font-display);letter-spacing:-.01em}
+.pin-hint{font:500 13px var(--font-body);color:var(--text-3);margin-top:3px}
+.pin-dots{display:flex;justify-content:center;gap:16px;height:24px;align-items:center}
+.pin-dots.shake{animation:shake .45s}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--line-2);transition:all .18s cubic-bezier(.3,1.4,.6,1)}
+.pin-dot.on{border-color:transparent;background:linear-gradient(135deg,var(--teal-300),var(--teal));transform:scale(1.15);box-shadow:0 0 0 5px rgba(14,159,149,.16),0 6px 14px -4px rgba(14,159,149,.7)}
+.pin-err{text-align:center;font:600 14px var(--font-body);color:var(--crit-700);margin-top:-4px}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.key{height:58px;border-radius:18px;background:var(--card);border:1px solid rgba(10,37,48,.07);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 2px 0 rgba(10,37,48,.06),0 8px 18px -12px rgba(10,37,48,.4);font:600 25px var(--font-mono);color:var(--text);display:grid;place-items:center;transition:transform .08s,background .15s}
+.key:active{transform:translateY(1px) scale(.97);background:var(--teal-100)}
+.key-fn{background:transparent;box-shadow:none;border:1.5px dashed var(--line-2);font:600 14px var(--font-body);color:var(--text-2)}
+.key-fn svg{width:24px;height:24px}
+
+/* ── home ── */
+.greet{padding:20px 20px 0}
+.greet-h{font:700 30px/1.08 var(--font-display);letter-spacing:-.03em;margin-top:8px}
+.greet-h span{background:linear-gradient(100deg,var(--teal-300),#C1FFF4 50%,var(--saffron-300));-webkit-background-clip:text;background-clip:text;color:transparent}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:18px 18px 4px}
+.kpi{border-radius:18px;padding:12px 12px 11px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.kpi b{display:block;font:700 30px/1 var(--font-display);letter-spacing:-.03em;color:#fff}
+.kpi span{display:block;font:600 10.5px/1.25 var(--font-body);color:rgba(255,255,255,.72);margin-top:6px}
+.kpi.warn b{color:var(--saffron-300)}.kpi.crit b{color:#FF8E91}
+.cta{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;width:100%;min-height:112px;padding:18px 18px 18px 20px;border-radius:26px;text-align:left;color:#fff;isolation:isolate;
+  background:radial-gradient(90% 120% at 100% 0%,rgba(95,227,208,.55),transparent 55%),linear-gradient(140deg,#13B5A8 0%,#0B8A81 50%,#075F59 100%);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 22px 40px -18px rgba(10,127,119,.85)}
+.cta::before{content:'';position:absolute;inset:0;background:var(--jaali);opacity:.9;z-index:-1}
+.cta::after{content:'';position:absolute;top:0;bottom:0;left:0;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:sheen 5s ease-in-out infinite;z-index:-1}
+.cta:active{transform:scale(.99)}
+.cta-orb{position:relative;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.2);box-shadow:0 0 0 1px rgba(255,255,255,.35) inset}
+.cta-orb::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(255,255,255,.4);animation:halo 2.4s ease-out infinite}
+.cta-orb svg{width:28px;height:28px}
+.cta-t{flex:1;min-width:0}
+.cta-h{display:block;font:700 26px/1.05 var(--font-display);letter-spacing:-.025em}
+.cta-s{display:block;margin-top:7px;font:600 11px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.cta-go{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;background:rgba(255,255,255,.2);flex:none}
+.list{display:flex;flex-direction:column;gap:10px}
+.prow{position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px 12px 14px;border-radius:20px;background:var(--card);border:1px solid rgba(10,37,48,.06);box-shadow:var(--shadow-card);transition:transform .12s}
+.prow:active{transform:scale(.99)}
+.prow::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 4px 4px 0;background:var(--sev)}
+.avatar{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;flex:none;font:700 16px var(--font-display);color:var(--sev-7,var(--teal-700));background:var(--sev-1,var(--teal-100));position:relative}
+.avatar.ink{background:linear-gradient(150deg,var(--ink-700),var(--ink-900));color:var(--teal-300)}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.p-main{flex:1;min-width:0}
+
+.p-nm,.p-mt{display:block}
+.p-nm{font:600 16px var(--font-body);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-mt{font:500 11.5px var(--font-mono);color:var(--text-3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.p-side{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:none}
+.sync-dot{width:10px;height:10px;border-radius:50%}
+.sync-dot.ok{background:var(--ok);box-shadow:0 0 0 3px rgba(31,169,113,.18)}
+.sync-dot.wait{border:2.5px solid var(--saffron)}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:26px 18px;border-radius:var(--r-lg);border:1.5px dashed var(--line-2);color:var(--text-3)}
+.empty .ib{width:52px;height:52px;border-radius:18px}
+.empty b{font:700 16px var(--font-display);color:var(--text)}
+.empty span{font:500 13px var(--font-body)}
+
+/* ── dock ── */
+.dock{flex:none;display:flex;gap:4px;margin:0 14px 14px;padding:6px;height:72px;border-radius:26px;background:rgba(8,32,40,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 20px 40px -18px rgba(5,22,28,.75),0 0 0 1px rgba(255,255,255,.05) inset}
+.dock button{flex:1;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:rgba(255,255,255,.66);font:600 11.5px var(--font-body);transition:background .2s,color .2s}
+.dock button svg{width:22px;height:22px}
+.dock button.on{color:#fff;background:linear-gradient(160deg,rgba(22,185,171,.95),rgba(10,122,114,.95));box-shadow:0 10px 22px -10px rgba(14,159,149,.9),0 1px 0 rgba(255,255,255,.25) inset}
+
+/* ── search ── */
+.search{display:flex;align-items:center;gap:10px;height:50px;margin:16px 18px 0;padding:0 14px;border-radius:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff}
+.search:focus-within{border-color:var(--teal-300);box-shadow:0 0 0 4px rgba(95,227,208,.18)}
+.search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#fff;font:500 15px var(--font-body)}
+.search input::placeholder{color:rgba(255,255,255,.6)}
+.search button{color:rgba(255,255,255,.8);display:grid;place-items:center;width:30px;height:30px;border-radius:10px}
+.search button[hidden]{display:none}
+
+/* ── settings ── */
+.profile{display:flex;align-items:center;gap:14px;padding:18px 20px 0}
+.profile .avatar{width:58px;height:58px;border-radius:20px;font-size:20px}
+.profile-id{font:700 22px var(--font-display);letter-spacing:-.01em}
+.srow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.srow:first-of-type{border-top:0;padding-top:4px}
+.srow .st-t{flex:1;min-width:0}
+.srow .st-l{font:600 15px var(--font-body);color:var(--text)}
+.srow .st-v{font:500 12.5px var(--font-body);color:var(--text-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis}
+.mini-btn{height:36px;padding:0 14px;border-radius:12px;background:var(--paper);border:1px solid var(--line-2);font:600 13px var(--font-body);color:var(--text);flex:none}
+.mini-btn:active{background:var(--teal-100)}
+.status-tag{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:999px;font:700 9.5px var(--font-mono);letter-spacing:.1em}
+.status-tag.on{background:var(--ok-100);color:var(--ok-700)}.status-tag.on::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.status-tag.mid{background:var(--warn-100);color:var(--warn-700)}
+.status-tag.off{background:var(--paper-2);color:var(--text-3)}
+.cloud-card{border:1.5px solid rgba(14,159,149,.35);background:linear-gradient(160deg,#FFFFFF 0%,#F2FBF9 100%)}
+
+/* ── forms ── */
+.flabel{display:flex;align-items:center;justify-content:space-between;margin:0 2px 9px;font:700 15px var(--font-display);letter-spacing:-.005em;color:var(--text)}
+.flabel small{font:600 10px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.flabel small.req{color:var(--crit-700)}
+.field{display:flex;align-items:center;gap:12px;height:60px;padding:0 16px;border-radius:18px;background:var(--card);border:2px solid var(--line);box-shadow:0 1px 2px rgba(10,37,48,.04);transition:border-color .2s,box-shadow .2s}
+.field:focus-within{border-color:var(--teal);box-shadow:0 0 0 5px rgba(14,159,149,.14)}
+.field.is-ok{border-color:rgba(14,159,149,.6)}
+.field.is-err{border-color:rgba(229,72,77,.65);box-shadow:0 0 0 5px rgba(229,72,77,.10)}
+.field > svg{color:var(--text-3)}
+.field input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:500 18px var(--font-body);color:var(--text)}
+.field input:focus-visible{outline:none}
+.field .ok-mark{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--teal);color:#fff}
+.field .ok-mark svg{width:16px;height:16px;stroke-width:3}
+.ferr{font:600 12.5px var(--font-body);color:var(--crit-700);margin:7px 4px 0}
+.ferr[hidden],.ok-mark[hidden]{display:none}
+.age{display:flex;align-items:stretch;gap:10px}
+.round{width:70px;border-radius:22px;display:grid;place-items:center;flex:none;background:var(--card);border:1.5px solid var(--line-2);color:var(--text);box-shadow:0 1px 2px rgba(10,37,48,.06)}
+.round svg{width:26px;height:26px;stroke-width:2.6}
+.round.plus{background:linear-gradient(135deg,#16B9AB,#0A7A72);color:#fff;border:0;box-shadow:0 12px 24px -12px rgba(14,159,149,.85)}
+.age-val{flex:1;height:96px;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative;overflow:hidden;isolation:isolate;background:linear-gradient(160deg,var(--ink-700),var(--ink-900))}
+.age-val::before{content:'';position:absolute;inset:0;background:var(--jaali);z-index:-1}
+.age-val b{font:800 46px/1 var(--font-display);letter-spacing:-.04em}
+.age-val span{font:600 10.5px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--teal-300);margin-top:4px}
+.bands{display:flex;gap:7px;margin-top:10px}
+.bands button{flex:1;height:44px;border-radius:14px;background:var(--card);border:1.5px solid var(--line);font:600 13.5px var(--font-body);color:var(--text-2)}
+.bands button.on{background:var(--ink-800);border-color:var(--ink-800);color:#fff}
+.sex{display:flex;gap:10px}
+.sex button{flex:1;height:96px;border-radius:22px;background:var(--card);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font:700 17px var(--font-display);color:var(--text-2);position:relative;transition:all .18s}
+.sex button svg{width:30px;height:30px;color:var(--text-3)}
+.sex button.on{border-color:var(--teal);background:linear-gradient(160deg,#FFFFFF,#E9F8F5);color:var(--text);box-shadow:0 0 0 5px rgba(14,159,149,.12)}
+.sex button.on svg{color:var(--teal-600)}
+.sex button.on::after{content:'';position:absolute;top:10px;right:10px;width:18px;height:18px;border-radius:50%;background:var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/12px no-repeat}
+.select-card{position:relative;display:flex;align-items:center;gap:12px;height:72px;padding:0 16px;border-radius:20px;background:var(--card);border:2px solid var(--line);box-shadow:0 1px 2px rgba(10,37,48,.04)}
+.select-card:focus-within{border-color:var(--teal);box-shadow:0 0 0 5px rgba(14,159,149,.14)}
+.select-card select{position:absolute;inset:0;opacity:0;width:100%;height:100%;border:0;cursor:pointer}
+.select-card .sv{flex:1;min-width:0}
+.select-card .sv b{display:block;font:700 19px var(--font-display);letter-spacing:-.01em;color:var(--text)}
+.select-card .sv span{font:600 10px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.select-card svg.rot{color:var(--text-3);transform:rotate(90deg)}
+.inline{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
+.inline .it{flex:1;min-width:0;font:600 14px var(--font-body);color:var(--text)}
+.inline .it small{display:block;font:500 12px var(--font-body);color:var(--text-3);margin-top:1px}
+.inline.good{background:var(--ok-100);border-color:rgba(31,169,113,.3)}
+.photo{display:flex;align-items:center;gap:14px;padding:12px;border-radius:20px;background:var(--card);border:1.5px dashed var(--line-2);cursor:pointer}
+.photo .ph{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;flex:none;background:var(--paper);color:var(--text-3);overflow:hidden}
+.photo .ph svg{width:26px;height:26px}
+.photo .ph img{width:100%;height:100%;object-fit:cover}
+.photo .it{font:600 14px var(--font-body);color:var(--text)}
+.photo .it small{display:block;font:500 12px var(--font-body);color:var(--text-3);margin-top:2px}
+.vitals{display:flex;gap:8px}
+.vin{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding:10px 10px 8px;border-radius:18px;background:var(--card);border:2px solid var(--line);transition:border-color .2s,box-shadow .2s}
+.vin:focus-within{border-color:var(--teal);box-shadow:0 0 0 4px rgba(14,159,149,.14)}
+.vin-h{display:flex;align-items:center;gap:5px;font:600 9.5px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
+.vin-h svg{width:14px;height:14px}
+.vin input{width:100%;border:0;outline:0;background:transparent;font:700 22px var(--font-mono);color:var(--text);padding:0}
+.vin input::placeholder{color:#B5C2C6}
+.vhint{display:flex;flex-direction:column;gap:6px;margin-top:10px;font:500 12.5px/1.45 var(--font-body);color:var(--text-3)}
+.vhint .vh{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:12px;background:var(--sev-1);color:var(--sev-7);font-weight:600}
+.vhint .vh::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--sev);flex:none}
+.vhint .vh.note{background:var(--paper-2);color:var(--text-2)}
+.vhint .vh.note::before{background:var(--text-3)}
+.ta{width:100%;min-height:92px;border-radius:18px;background:var(--card);border:2px solid var(--line);padding:14px 16px;font:500 15px/1.55 var(--font-body);color:var(--text);resize:vertical;outline:none;transition:border-color .2s,box-shadow .2s}
+.ta:focus{border-color:var(--teal);box-shadow:0 0 0 5px rgba(14,159,149,.14)}
+.foot{flex:none;padding:12px 18px 18px;background:linear-gradient(180deg,rgba(243,239,230,0),var(--paper) 30%);position:relative;z-index:2;margin-top:-18px}
+
+/* ── voice ── */
+.prompt{display:flex;align-items:center;gap:14px;padding:14px 14px 14px 18px;border-radius:22px;background:var(--card);box-shadow:var(--shadow-card);border:1px solid rgba(10,37,48,.06)}
+.prompt b{flex:1;font:700 22px/1.12 var(--font-display);letter-spacing:-.02em}
+.play{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--ink-800);color:#fff;box-shadow:0 10px 20px -10px rgba(5,22,28,.8)}
+.play svg{width:20px;height:20px;margin-left:2px}
+.stagebox{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:6px 0;min-height:330px}
+.orb{position:relative;width:200px;height:200px;border-radius:50%;display:grid;place-items:center;color:#fff;animation:breathe 4s ease-in-out infinite;
+  background:radial-gradient(circle at 32% 28%,#8FF3E4 0%,#18BDAE 28%,#0A8078 64%,#06504B 100%);
+  box-shadow:0 0 0 12px rgba(14,159,149,.10),0 0 0 26px rgba(14,159,149,.05),0 34px 60px -20px rgba(10,127,119,.85),inset 0 3px 0 rgba(255,255,255,.4),inset 0 -14px 30px rgba(0,0,0,.2)}
+.orb::before,.orb::after{content:'';position:absolute;inset:-16px;border-radius:50%;border:2px solid rgba(14,159,149,.45);animation:halo 3s ease-out infinite;pointer-events:none}
+.orb::after{animation-delay:1.5s}
+.orb svg{width:72px;height:72px;stroke-width:1.8;filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
+.orb:active{transform:scale(.97)}
+.orb-l{text-align:center}
+.orb-l b{display:block;font:700 22px var(--font-display);letter-spacing:-.02em}
+.orb-l span{font:600 10.5px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.seg{display:flex;gap:4px;padding:4px;border-radius:16px;background:var(--paper-2);width:100%}
+.seg button{flex:1;height:40px;border-radius:12px;font:600 14px var(--font-body);color:var(--text-2);transition:all .18s}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--text);box-shadow:0 6px 14px -6px rgba(10,37,48,.35),0 0 0 1px rgba(10,37,48,.05)}
+.type-btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 20px;border-radius:999px;background:var(--card);border:1.5px solid var(--line-2);font:600 15px var(--font-body);color:var(--text);box-shadow:0 1px 2px rgba(10,37,48,.06)}
+.type-btn svg{color:var(--teal-600)}
+.note{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:16px;font:500 13px/1.45 var(--font-body)}
+.note svg{width:18px;height:18px;margin-top:1px}
+.note.teal{background:var(--teal-100);color:var(--teal-700)}
+.note.warn{background:var(--warn-100);color:var(--warn-700)}
+.note.plain{background:var(--paper-2);color:var(--text-2)}
+.note.unk{background:var(--unk-100);color:var(--unk-700)}
+
+/* typed symptoms */
+#sym-text{width:100%;min-height:150px;border-radius:22px;background:var(--card);border:2px solid var(--line);padding:16px 18px;font:500 19px/1.6 var(--font-body);color:var(--text);resize:vertical;outline:none;box-shadow:var(--shadow-card);transition:border-color .2s,box-shadow .2s}
+#sym-text:focus{border-color:var(--teal);box-shadow:0 0 0 5px rgba(14,159,149,.14),var(--shadow-card)}
+.live{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:28px;margin-top:10px}
+.live .eyebrow{margin-right:4px}
+.live .pill{animation:fadein .25s both}
+.quick{display:flex;flex-wrap:wrap;gap:8px}
+.quick button{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:0 15px;border-radius:999px;background:var(--card);border:1.5px solid var(--line);font:600 14px var(--font-body);color:var(--text);box-shadow:0 1px 2px rgba(10,37,48,.05);transition:transform .1s,border-color .15s}
+.quick button:active{transform:scale(.96);border-color:var(--sev)}
+.quick button .d{width:9px;height:9px;border-radius:50%;background:var(--sev);box-shadow:0 0 0 3px var(--sev-1)}
+
+/* ── recording (immersive) ── */
+.immersive{flex:1;min-height:0;display:flex;flex-direction:column;color:#fff;position:relative;isolation:isolate;overflow:hidden;
+  background:radial-gradient(80% 50% at 50% 38%,rgba(14,159,149,.42),transparent 70%),radial-gradient(60% 40% at 80% 100%,rgba(255,138,43,.16),transparent 70%),linear-gradient(180deg,var(--ink-900),var(--ink-950))}
+.immersive::before{content:'';position:absolute;inset:0;background:var(--jaali);z-index:-1;-webkit-mask-image:radial-gradient(60% 50% at 50% 40%,#000,transparent);mask-image:radial-gradient(60% 50% at 50% 40%,#000,transparent)}
+.rec-top{display:flex;align-items:center;gap:12px;padding:8px 20px 0}
+.rec-live{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;background:rgba(229,72,77,.18);border:1px solid rgba(255,142,145,.45);font:700 11px var(--font-mono);letter-spacing:.16em;color:#FFC2C4}
+.rec-live i{width:8px;height:8px;border-radius:50%;background:#FF5A5F;box-shadow:0 0 10px #FF5A5F;animation:blip 1.1s ease-in-out infinite}
+#rec-timer{margin-left:auto;font:600 30px var(--font-mono);letter-spacing:.02em;color:#fff}
+.rec-q{padding:22px 24px 0;font:700 26px/1.12 var(--font-display);letter-spacing:-.02em;text-align:center}
+.rec-q span{display:block;font:600 10.5px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--teal-300);margin-bottom:8px}
+.rec-core{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:10px 20px}
+.rec-orb{position:relative;width:150px;height:150px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 32% 28%,#8FF3E4 0%,#18BDAE 30%,#0A8078 66%,#06504B 100%);box-shadow:0 0 60px rgba(95,227,208,.45),inset 0 3px 0 rgba(255,255,255,.4)}
+.rec-orb svg{width:56px;height:56px;stroke-width:1.8}
+.rec-orb::before,.rec-orb::after{content:'';position:absolute;inset:-18px;border-radius:50%;border:2px solid rgba(95,227,208,.55);animation:halo 2s ease-out infinite}
+.rec-orb::after{animation-delay:1s}
+#wave{height:104px;display:flex;align-items:center;justify-content:center;gap:5px;width:100%}
+.wv-bar{display:inline-block;width:6px;height:8px;border-radius:6px;background:linear-gradient(180deg,#B8FFF2,var(--teal-300) 40%,var(--teal));box-shadow:0 0 14px rgba(95,227,208,.5);transition:height .08s linear}
+#live-caption{width:100%;min-height:56px;max-height:96px;overflow-y:auto;padding:14px 16px;border-radius:20px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);text-align:center;font:500 15px/1.45 var(--font-body);color:rgba(255,255,255,.9)}
+#quiet-hint{opacity:0;transition:opacity .25s;display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 13px;border-radius:999px;background:rgba(242,165,22,.18);border:1px solid rgba(255,196,90,.45);font:600 13px var(--font-body);color:#FFD58A}
+.rec-foot{flex:none;padding:0 20px 24px}
+.btn-stop{color:var(--ink-900);background:#fff;box-shadow:0 18px 40px -16px rgba(0,0,0,.7)}
+.btn-stop .sq{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,#FF6B6F,#D9363C)}
+
+/* ── confirm ── */
+.heard{position:relative;padding:22px 20px 18px;border-radius:26px;background:var(--card);box-shadow:var(--shadow-card);border:1px solid rgba(10,37,48,.06)}
+.heard::before{content:'\201C';position:absolute;top:-14px;right:16px;font:800 84px/1 var(--font-display);color:var(--teal-100);z-index:0}
+.heard p{position:relative;font:500 21px/1.75 var(--font-body);color:var(--text)}
+.heard-foot{display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.heard-foot span{flex:1;font:500 13.5px var(--font-body);color:var(--text-3)}
+.heard.unclear{border:2px solid rgba(242,165,22,.55)}
+.heard.unclear::before{color:var(--warn-100)}
+.masked{background:rgba(242,165,22,.22);border-bottom:2.5px dotted var(--warn);padding:0 3px;border-radius:5px}
+.detected{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.banner{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:20px}
+.banner b{display:block;font:700 16px var(--font-display);letter-spacing:-.01em}
+.banner span{font:500 12.5px var(--font-body)}
+.banner.ok{background:var(--ok-100);color:var(--ok-700)}
+.banner.warn{background:linear-gradient(135deg,#FFD27A,#F2A516);color:#3A2500}
+.banner .ib{background:rgba(255,255,255,.55);color:inherit}
+
+/* ── processing ── */
+.proc{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:26px;padding:26px 20px 18px}
+.ring{position:relative;width:184px;height:184px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:10;stroke-linecap:round}
+.ring .track{stroke:var(--paper-2)}
+.ring .prog{stroke:url(#ringgrad);stroke-dasharray:327;stroke-dashoffset:327;animation:ringfill 1.9s cubic-bezier(.45,0,.2,1) forwards;filter:drop-shadow(0 0 6px rgba(14,159,149,.5))}
+.ring-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-c b{font:800 34px/1 var(--font-display);letter-spacing:-.03em}
+.ring-c span{font:600 10px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--text-3);margin-top:6px}
+.steps-v{width:100%;display:flex;flex-direction:column;gap:10px}
+.pstep{display:flex;align-items:center;gap:14px;height:68px;padding:0 16px;border-radius:20px;background:var(--card);border:1.5px solid var(--line);opacity:.5;transition:all .35s}
+.pstep .pi{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--paper-2);color:var(--text-3)}
+.pstep .pi svg{width:18px;height:18px;stroke-width:3}
+.pstep b{flex:1;font:600 16.5px var(--font-body)}
+.pstep .cnt{font:700 26px var(--font-display);color:var(--teal-600)}
+.pstep.active{opacity:1;border-color:var(--teal);box-shadow:0 0 0 5px rgba(14,159,149,.12)}
+.pstep.active .pi{background:transparent;border:3px solid var(--teal);border-right-color:transparent;animation:spin .8s linear infinite}
+.pstep.active .pi svg{display:none}
+.pstep.done{opacity:1}
+.pstep.done .pi{background:var(--teal);color:#fff}
+
+/* ── result ── */
+.verdict{position:relative;flex:none;color:#fff;isolation:isolate;overflow:hidden;border-radius:0 0 34px 34px;padding-bottom:22px}
+.verdict::before{content:'';position:absolute;inset:0;z-index:-1;background:var(--jaali);-webkit-mask-image:linear-gradient(180deg,#000,transparent);mask-image:linear-gradient(180deg,#000,transparent)}
+.verdict::after{content:'';position:absolute;inset:0;z-index:-1;background:var(--grain);opacity:.45;pointer-events:none}
+.verdict.sev-HIGH{background:radial-gradient(90% 80% at 85% 10%,rgba(255,170,160,.55),transparent 60%),linear-gradient(165deg,#EE5157 0%,#C02A32 48%,#7A1219 100%)}
+.verdict.sev-MEDIUM{color:#2B1B00;background:radial-gradient(90% 80% at 85% 10%,rgba(255,244,200,.8),transparent 60%),linear-gradient(165deg,#FFD067 0%,#F2A516 50%,#C27800 100%)}
+.verdict.sev-LOW{background:radial-gradient(90% 80% at 85% 10%,rgba(180,255,220,.5),transparent 60%),linear-gradient(165deg,#25B57A 0%,#0E7A4E 50%,#07502F 100%)}
+.verdict.sev-UNCERTAIN{background:radial-gradient(90% 80% at 85% 10%,rgba(214,208,255,.55),transparent 60%),linear-gradient(165deg,#8B7EF8 0%,#5446D6 50%,#2E2496 100%)}
+.verdict .sb{color:inherit}
+.verdict.sev-MEDIUM .sb-sig i,.verdict.sev-MEDIUM .sb-bat i{background:#2B1B00}
+.verdict.sev-MEDIUM .sb-bat,.verdict.sev-MEDIUM .sb-bat::after{border-color:rgba(43,27,0,.6)}
+.verdict.sev-MEDIUM .sb-bat::after{background:rgba(43,27,0,.6)}
+.verdict.sev-MEDIUM .icon-btn,.verdict.sev-MEDIUM .chip{background:rgba(255,255,255,.35);border-color:rgba(43,27,0,.15);color:#2B1B00}
+.verdict.sev-MEDIUM .h-eyebrow{color:rgba(43,27,0,.75)}
+.verdict.sev-MEDIUM .h-sub{color:rgba(43,27,0,.8)}
+.verdict.sev-MEDIUM .h-title{color:#2B1B00}
+.v-main{display:flex;align-items:center;gap:18px;padding:20px 22px 0}
+.medal{position:relative;width:82px;height:82px;border-radius:28px;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.2);box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 18px 30px -14px rgba(0,0,0,.45)}
+.medal svg{width:42px;height:42px;stroke-width:2.2}
+.medal::before{content:'';position:absolute;inset:-8px;border-radius:34px;border:2px solid rgba(255,255,255,.45);animation:halo 2.2s ease-out infinite}
+.sev-MEDIUM .medal{background:rgba(255,255,255,.45)}
+.sev-MEDIUM .medal::before{border-color:rgba(43,27,0,.25)}
+.v-title{font:800 34px/1.02 var(--font-display);letter-spacing:-.035em}
+.v-sub{font:600 14.5px/1.35 var(--font-body);margin-top:7px;opacity:.95}
+.meter{display:flex;gap:6px;padding:20px 22px 0}
+.meter div{flex:1;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:7px;font:700 12px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;background:rgba(255,255,255,.14);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.18)}
+.meter div svg{width:14px;height:14px}
+.meter div.on{background:#fff;color:var(--sev-7);border-color:#fff;box-shadow:0 10px 22px -10px rgba(0,0,0,.5)}
+.sev-MEDIUM .meter div{background:rgba(255,255,255,.3);color:rgba(43,27,0,.7);border-color:rgba(43,27,0,.12)}
+.sev-MEDIUM .meter div.on{background:#2B1B00;color:#FFD067}
+.why{display:flex;flex-direction:column;gap:9px}
+.why-r{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:15px;background:var(--sev-1);color:var(--sev-7)}
+.why-r .d{width:10px;height:10px;border-radius:50%;background:var(--sev);flex:none;box-shadow:0 0 0 4px rgba(255,255,255,.6)}
+.why-r b{font:600 16px var(--font-body);color:var(--text)}
+.ruled{display:flex;align-items:flex-start;gap:10px;margin-top:4px;padding:11px 12px;border-radius:14px;background:var(--paper);font:500 13.5px/1.5 var(--font-body);color:var(--text-2)}
+.ruled svg{width:17px;height:17px;color:var(--ok-700);margin-top:1px}
+.vt-row{display:flex;gap:8px}
+.vt{flex:1;border-radius:18px;padding:12px 6px 10px;text-align:center;background:var(--paper);border:1.5px solid transparent}
+.vt .vv{font:700 23px/1 var(--font-display);letter-spacing:-.02em;color:var(--text)}
+.vt .vv small{font:600 11px var(--font-mono);margin-left:2px;color:var(--text-3)}
+.vt .vl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:7px;font:600 9.5px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.vt .vl svg{width:13px;height:13px}
+.vt.bad{background:var(--crit-100);border-color:rgba(229,72,77,.35)}
+.vt.bad .vv,.vt.bad .vl{color:var(--crit-700)}
+.dnote{position:relative;padding:16px;border-radius:24px;background:linear-gradient(150deg,#E4F7F3 0%,#FFFFFF 70%);border:1.5px solid rgba(14,159,149,.38);box-shadow:var(--shadow-card)}
+.dnote p{font:500 16.5px/1.55 var(--font-body);color:var(--text);white-space:pre-wrap}
+.call{display:flex;align-items:center;gap:16px;min-height:88px;padding:0 20px;border-radius:26px;color:#fff;text-decoration:none;position:relative;overflow:hidden;isolation:isolate;
+  background:radial-gradient(90% 120% at 100% 0%,rgba(95,227,208,.5),transparent 55%),linear-gradient(140deg,#13B5A8 0%,#0B8A81 50%,#075F59 100%);box-shadow:0 22px 40px -18px rgba(10,127,119,.85)}
+.call::before{content:'';position:absolute;inset:0;background:var(--jaali);z-index:-1}
+.call .lead{width:52px;height:52px;border-radius:18px;display:grid;place-items:center;background:rgba(255,255,255,.2);flex:none}
+.call .lead svg{width:26px;height:26px}
+.call b{display:block;font:700 23px/1.05 var(--font-display);letter-spacing:-.02em}
+.call b + span{display:block;font:600 11px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.85);margin-top:6px}
+.call .go{margin-left:auto;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.18)}
+.switch-row{display:flex;align-items:center;gap:12px;width:100%;min-height:62px;padding:0 16px;border-radius:20px;background:var(--card);border:1.5px solid var(--line);text-align:left}
+.switch-row b{flex:1;font:600 15.5px var(--font-body);color:var(--text)}
+.switch-row.on{background:var(--ok-100);border-color:rgba(31,169,113,.4)}
+.switch-row.on b{color:var(--ok-700)}
+.switch{width:50px;height:30px;border-radius:999px;background:#C9D3D6;position:relative;flex:none;transition:background .2s}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25);transition:transform .22s cubic-bezier(.3,1.4,.6,1)}
+.switch-row.on .switch{background:var(--ok)}
+.switch-row.on .switch::after{transform:translateX(20px)}
+.disclaimer{flex:none;display:flex;align-items:center;justify-content:center;gap:8px;height:42px;background:var(--paper-2);border-top:1px solid var(--line);font:600 12.5px var(--font-body);color:var(--text-2)}
+.disclaimer svg{width:16px;height:16px;color:var(--text-3)}
+
+/* queued */
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl{display:flex;gap:14px;position:relative;padding-bottom:16px}
+.tl:last-child{padding-bottom:0}
+.tl::before{content:'';position:absolute;left:15px;top:32px;bottom:2px;width:2px;background:var(--line-2)}
+.tl:last-child::before{display:none}
+.tl i{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;font:700 13px var(--font-mono);font-style:normal;background:var(--ink-800);color:var(--teal-300)}
+.tl b{font:600 15px/1.45 var(--font-body);color:var(--text);padding-top:5px}
+.quote{font:500 17px/1.65 var(--font-body);color:var(--text)}
+
+/* slip */
+.slip{border-radius:24px;background:#fff;overflow:hidden;box-shadow:var(--shadow-card);border:1px solid rgba(10,37,48,.08)}
+.slip-top{position:relative;isolation:isolate;display:flex;align-items:center;gap:12px;padding:16px 18px;color:#fff;background:linear-gradient(160deg,var(--ink-800),var(--ink-950))}
+.slip-top::before{content:'';position:absolute;inset:0;background:var(--jaali);z-index:-1}
+.slip-top .st-t{flex:1}
+.slip-top b{display:block;font:800 17px var(--font-display);letter-spacing:.02em}
+.slip-top span{font:600 9px var(--font-mono);letter-spacing:.06em;color:var(--teal-300);white-space:nowrap}
+.slip-no{font:600 10px var(--font-mono);letter-spacing:.06em;color:rgba(255,255,255,.75);text-align:right}
+.slip-sev{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--sev);color:#fff}
+.slip-sev.sev-MEDIUM{color:#2B1B00}
+.slip-sev b{font:800 20px var(--font-display);letter-spacing:-.01em}
+.slip-sev span{display:block;font:500 13px var(--font-body);opacity:.92;margin-top:2px}
+.slip-body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:14px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.kv .k{font:600 9.5px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.kv .v{font:600 15px var(--font-body);color:var(--text);margin-top:2px}
+.box{border-radius:14px;background:var(--paper);padding:11px 13px;font:400 14px/1.6 var(--font-body);color:var(--text)}
+.slip-fine{border-top:1px dashed var(--line-2);padding-top:12px;font:500 11.5px/1.5 var(--font-body);color:var(--text-3);text-align:center}
+
+/* toast */
+.toast-in{position:absolute;left:14px;right:14px;top:44px;z-index:50;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:rgba(8,32,40,.95);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;font:600 14px/1.35 var(--font-body);box-shadow:0 20px 40px -14px rgba(0,0,0,.6),0 0 0 1px rgba(95,227,208,.25) inset;animation:toastin .4s cubic-bezier(.2,.9,.3,1.25)}
+.toast-in .ib{width:36px;height:36px;border-radius:12px;background:rgba(95,227,208,.16);color:var(--teal-300)}
+
+.no-print{}
+.print-only{display:none}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+@media print{
+  body{background:#fff!important;display:block;padding:0!important}
+  body::before,body::after,.stage{display:none!important}
+  #device{box-shadow:none!important;border-radius:0!important;width:100%!important;max-width:100%!important;height:auto!important;background:#fff!important}
+  .no-print{display:none!important}
+  .print-only{display:block!important}
+  .body{overflow:visible!important}
+  .slip{box-shadow:none;border:1px solid #ccc}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+/* additions */
+.sevsum{display:flex;flex-wrap:wrap;gap:6px;padding:12px 18px 0}
+.ss{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);font:600 12px var(--font-body);color:rgba(255,255,255,.88)}
+.ss i{width:8px;height:8px;border-radius:50%;background:var(--sev);box-shadow:0 0 8px var(--sev)}
+.pill.word{font:600 12.5px var(--font-body);letter-spacing:0;height:28px;padding:0 11px}
+.vin-u{font:600 9.5px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.slip-sev .medal{width:46px;height:46px;border-radius:16px;background:rgba(255,255,255,.22)}
+.slip-sev .medal::before{display:none}
+.slip-sev .medal svg{width:24px;height:24px}
+.meterbar{height:7px;border-radius:7px;background:var(--paper-2);overflow:hidden;margin-top:6px}
+.meterbar i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,var(--teal-300),var(--teal))}
+.foot-stack{display:flex;flex-direction:column;gap:10px}
+.verdict .h-eyebrow{color:inherit;opacity:.85}
+.note b{font-weight:700}
+
+/* review fixes */
+.orb,.rec-orb,.ring{flex:none}
+.sevsum{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ss{justify-content:center;padding:0 6px;font-size:11px;gap:5px}
+.eyebrow + .srow,.card-h + .srow{border-top:0;padding-top:4px}
+.sec [lang]:not([lang="en"]),.meter [lang]{letter-spacing:0;text-transform:none;font-family:var(--font-body);font-size:12.5px}
+.hero-tall{padding-bottom:50px}
+.hero-tall .chip{height:30px;padding:0 10px;font-size:11.5px}
+.login-tag{padding:16px 22px 14px}
+.key{height:54px}
+</style>
+<!-- Firebase SDK (loaded before app script so globals are ready) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<aside class="stage">
+  <div>
+    <div class="stage-logo"><svg width="44" height="44" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="stg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7FF0DE"/><stop offset=".5" stop-color="#0E9F95"/><stop offset="1" stop-color="#075F59"/></linearGradient></defs><rect width="48" height="48" rx="15" fill="url(#stg)"/><path d="M7 26.5h8.5l3.2-7.5 5.3 14 4-10.5 2.3 4H41" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="37.5" cy="13" r="3.4" fill="#FFB673"/></svg>Sahayak</div>
+    <h1>Voice triage for India&rsquo;s <span>frontline health workers.</span></h1>
+    <p>ASHA workers speak or type symptoms in English, हिंदी, मराठी or বাংলা. Sahayak flags danger signs on the phone, keeps working offline, and syncs every case to the PHC doctor in real time.</p>
+    <ul class="stage-feats"><li><b>1,900+</b><span>symptom words &amp; phrases</span></li><li><b>4</b><span>languages, voice or text</span></li><li><b>On&#8209;device</b><span>triage, no internet needed</span></li></ul>
+    <a class="stage-link" href="dashboard.html">Open the PHC dashboard &rarr;</a>
+  </div>
+</aside>
+<div id="device">
+  <div id="screen"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// ─── FIREBASE CLOUD CONFIG ──────────────────────────────────────────────────
+// SETUP (5 min):
+//  1. Go to https://console.firebase.google.com → New project (e.g. "sahayak")
+//  2. Add a Web app → copy the config object values below
+//  3. Authentication → Sign-in method → Enable "Anonymous"
+//  4. Firestore Database → Create database → Start in "test mode"
+//  5. (Optional) Firebase Hosting → run: firebase deploy
+// ────────────────────────────────────────────────────────────────────────────
+var FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBjBHtKyJyl2TolczqW_580tyXkiYvb49s",
+  authDomain:        "sahayak-a-health-triage.firebaseapp.com",
+  projectId:         "sahayak-a-health-triage",
+  storageBucket:     "sahayak-a-health-triage.firebasestorage.app",
+  messagingSenderId: "186970837030",
+  appId:             "1:186970837030:web:bdd7d54dac7cb9fe3f56e7"
+};
+var CLOUD_ENABLED = !!FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+var db = null, fbAuth = null, fbUser = null;
+if(CLOUD_ENABLED){
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    fbAuth = firebase.auth();
+    db.enablePersistence({synchronizeTabs:true}).catch(function(){});
+    fbAuth.onAuthStateChanged(function(u){ fbUser = u; if(u) startDoctorNotesListener(); safeRender(); });
+    fbAuth.signInAnonymously().catch(function(){});
+  }catch(e){ CLOUD_ENABLED = false; console.warn('Firebase init failed', e); }
+}
+
+var LS_KEY = 'sahayak_v1';
+var VILLAGES = ['Rampur','Bargaon','Sultanpur','Devpura','Kishanpur','Naya Gaon','Chandpur','Lakhanpur','Sarai Kalan','Meerpur','Govindpura','Bhawanipur','Kotra','Harijanwada'];
+var PHC_PHONE = '02734-22118';
+
+var CASES = [
+  {t:"Fever for three days. She has trouble breathing and pain in the chest. She is not able to eat.", low:false},
+  {t:"Sudden weakness on one side and cannot speak clearly since this morning.", low:false},
+  {t:"Fever for two days with vomiting and pain in the stomach.", low:false},
+  {t:"Loose motions since yesterday. Feels weak. No fever.", low:false},
+  {t:"Mild headache since one day. No fever, eating normally.", low:false},
+  {t:"Slight cough and mild body ache since morning.", low:false},
+  {t:"Pain somewhere and feeling unwell since two days.", low:false},
+  {t:"For three days strong chills, breathing trouble and chest pain.", low:true,
+    maskedHtml:'For three days <span class="masked">strong chill</span>. <span class="masked">breath &hellip;</span> trouble and <span class="masked">&mdash; &mdash; &mdash;</span> pain.', maskedCount:3}
+];
+
+// ─── SYMPTOM VOCABULARY ─────────────────────────────────────────────────────
+// Typed and spoken text share one classifier. Text and keywords are NFC-normalised and lower-cased.
+// Latin keywords must start at a word boundary ("ulti" must not hit "multiple"); Indic keywords match as
+// substrings because suffixes attach to the stem. When keywords overlap the longest wins. Severity:
+// red = danger sign (HIGH), amber = same-day review (MEDIUM), green = home care (LOW), neutral = harmless
+// phrase containing a flagged word (e.g. "blood pressure"). These are screening rules, not a diagnosis.
+var VOCAB = {
+red: {
+  en: [
+    // breathing
+    'trouble breathing','difficulty breathing','difficulty in breathing','breathing problem','breathing trouble','breathing difficulty','hard to breathe','cannot breathe',"can't breathe",'cant breathe','unable to breathe','not able to breathe','short of breath','shortness of breath','breathless','out of breath','gasping','wheez','fast breathing','noisy breathing','chest indrawing','blue lips','lips are blue','turning blue','choking','trouble ~ breath','difficulty ~ breath','breathing ~ difficult','breathing ~ problem','heavy breathing','breathing heavily',
+    // chest and heart
+    'chest pain','pain in the chest','pain in chest','chest tightness','tight chest','chest heaviness','heaviness in chest','chest pressure','pressure in chest','heart pain','pain in the heart','heart attack','chest ~ pain','pain ~ chest','chest ~ hurt','chest ~ heavy',
+    // consciousness, fits
+    'unconscious','unresponsive','had a fit','having a fit','shaking all over','not responding','not waking','will not wake','wont wake',"won't wake",'cannot be woken','faint','passed out','blacked out','collapsed','fits','convulsion','seizure','lethargic','very sleepy','too sleepy',
+    // stroke and nerves
+    'cannot speak clearly','cannot speak','cant speak',"can't speak",'unable to speak','slurred','one side','one sided','face drooping','face is drooping','drooping face','crooked mouth','mouth is crooked','paralysis','paralyzed','paralysed','cannot move','unable to move','sudden numbness','sudden weakness','sudden loss of vision','loss of vision','sudden blindness','stiff neck','neck stiffness',
+    // bleeding
+    'severe bleeding','heavy bleeding','bleeding a lot','bleeding heavily','profuse bleeding','bleeding will not stop','bleeding wont stop','bleeding not stopping','bleeding in pregnancy','bleeding during pregnancy','pregnant and bleeding','bleeding while pregnant','bleeding after delivery','bleeding after childbirth','postpartum bleeding','blood in stool','blood in the stool','bloody stool','black stool','black tarry','blood in vomit','blood in the vomit','vomiting blood','vomit blood','vomited blood','coughing blood','coughing up blood','cough with blood','blood in sputum','blood in urine','blood in the urine','bloody urine',
+    // bites, poison, injury
+    'snake bite','snakebite','bitten by a snake','bitten by snake','snake bit','dog bite','bitten by a dog','bitten by dog','dog bit','monkey bite','scorpion','poison','pesticide','insecticide','rat poison','overdose','electric shock','electrocuted','drowning','drowned','accident','head injury','hit on the head','fell from','severe burn','badly burnt','burnt badly',
+    // not eating or drinking (babies, dehydration)
+    'not able to eat','not able to drink','unable to drink','cannot drink','not drinking','not feeding','not breastfeeding','not breast feeding','not taking feed','not taking milk','refusing feed','refusing to feed','stopped drinking','not able to feed','unable to feed','not able to breastfeed','not eating','unable to eat','cannot eat','stopped eating','not able to swallow','cannot swallow','vomiting everything','vomits everything','vomits all','sunken eyes','baby not crying','baby is not crying','not taking ~ feed','not taking ~ milk',
+    // pregnancy
+    'labour pain','labor pain','in labour','in labor','water broke','waters broke','baby not moving','baby is not moving','baby has stopped moving','no baby movement','reduced baby movement','no fetal movement',
+    // mental health
+    'suicide','suicidal','want to die','wants to die','kill myself','kill himself','kill herself','self harm','harm myself',
+    // allergy and severe symptoms
+    'swollen tongue','tongue swelling','swollen lips','lips swelling','throat swelling','throat is swelling','severe pain','unbearable','excruciating','severe headache','worst headache','very high fever','extremely high fever','severe abdominal pain','severe stomach pain'
+  ],
+  hi: [
+    // breathing
+    'सांस','साँस','सांस लेने में','सांस फूल','दम फूल','दम घुट','हांफ','हाँफ','घरघराहट','सीटी जैसी','होंठ नीले','नीले होंठ','नीला पड़','ब्रीदिंग प्रॉब्लम','ब्रेथलेस',
+    'saans nahi','sans lene mein','saans lene mein','saans phool','sans phool','saans ki takleef','saans mein takleef','saans ruk','saans atak','dam phool','dam ghut','hanf','ghargharahat','breathing problem',
+    // chest
+    'सीने में दर्द','सीने दर्द','सीने में जकड़न','सीने में भारीपन','सीने में दबाव','छाती में दर्द','छाती दर्द','छाती में जकड़न','छाती भारी','छाती में भारीपन','छाती में दबाव','दिल में दर्द','दिल का दौरा','हार्ट अटैक','चेस्ट पेन','चेस्ट में दर्द','सीने ~ दर्द','छाती ~ दर्द','सीने ~ जकड़न','छाती ~ जकड़न','सीने ~ भारी','छाती ~ भारी','सीने ~ दबाव',
+    'seene mein dard','seene me dard','seene mein jakdan','seene mein bharipan','chaati mein dard','chhati mein dard','chhati dard','dil mein dard','dil ka daura','chest dard','heart attack','seene ~ dard','chhati ~ dard','chaati ~ dard',
+    // consciousness, fits
+    'बेहोश','बेहोशी','होश नहीं','होश में नहीं','होश खो','गश खा','दौरा पड़','दौरे पड़','दौरा आ','दौरे आ','दौरा पडा','मिर्गी','झटके आ','झटके पड़','झटके लग','बिजली का झटका','करंट लग','करंट का झटका','अकड़ गया','शरीर अकड़','गर्दन अकड़','गर्दन में अकड़न','जवाब नहीं दे','उठ नहीं रहा','उठ नहीं रही','अनकॉन्शियस','फिट्स','सीजर',
+    'behosh','behoshi','hosh nahi','hosh mein nahi','daura pad','daura aa','daure pad','mirgi','jhatke aa','jhatke pad','jhatke lag','current lag','karant lag','akad gaya','gardan akad','jawab nahi de','uth nahi raha','uth nahi rahi',
+    // stroke
+    'लकवा','पक्षाघात','चेहरा टेढ़ा','मुंह टेढ़ा','मुँह टेढ़ा','एक तरफ','आधा शरीर','बोल नहीं','बोलने में','जबान लड़खड़','ज़बान लड़खड़','आवाज नहीं निकल','अचानक दिखना बंद','अचानक दिखाई देना बंद','दिखना बंद','आंखों की रोशनी चली',
+    'lakwa','paksh aghat','chehra tedha','munh tedha','ek taraf','aadha sharir','baat nahi kar','bol nahi','jubaan ladkhada','awaaz nahi nikal','achanak dikhna band',
+    // bleeding
+    'खून','रक्तस्राव','रक्त स्राव','रक्तस्त्राव','काला पाखाना','काले दस्त','ब्लीडिंग',
+    'khoon','khoon aa raha','khoon beh','raktasrav','kala pakhana','kale dast',
+    // bites, poison, injury
+    'सांप ने','साँप ने','सांप काट','साँप काट','सर्पदंश','सर्प दंश','कुत्ते ने काट','कुत्ता काट','कुत्ते के काट','बंदर ने काट','बिच्छू','जहर','ज़हर','जहरीला','कीटनाशक','कीड़े मार','चूहे मार','ओवरडोज','डूब गया','डूब गई','डूबने','पानी में डूब','दुर्घटना','एक्सीडेंट','सिर में चोट','सिर पर चोट','सर में चोट','सर पर चोट','पेड़ से गिर','छत से गिर','ऊंचाई से गिर','बुरी तरह जल','बहुत जल गया','बहुत जल गई','बहुत जला','काफी जल गया','काफी जल गई',
+    'saanp ne','saap ne','saanp kat','sarp dansh','kutte ne kata','kutta kata','bandar ne kata','bichhu','zehar','jahar','keetnashak','chuhe mar','doob gaya','doob gayi','durghatna','sir mein chot','sir par chot','ped se gir','chhat se gir','buri tarah jal',
+    // not eating or drinking (babies, dehydration)
+    'खाना नहीं','कुछ नहीं खा','कुछ खा नहीं','खा नहीं पा','कुछ भी नहीं खा','कुछ नहीं पी','कुछ खा पी नहीं','पी नहीं पा','पी नहीं रहा','पी नहीं रही','पानी नहीं पी','दूध नहीं पी','दूध नहीं ले','स्तनपान नहीं','निगल नहीं पा','निगला नहीं जा','हर बार उल्टी','सब उल्टी','आंखें धंस','आँखें धँस','आंखे धंस',
+    'khana nahi','kuch nahi kha','kuch kha nahi','kha nahi pa','kuch nahi pi','pi nahi pa','pi nahi raha','pani nahi pi','doodh nahi pi','dudh nahi pi','stanpan nahi','nigal nahi pa','har baar ulti','aankhen dhans','kuch kha pi nahi',
+    // pregnancy
+    'प्रसव पीड़ा','प्रसव दर्द','पानी की थैली फट','पानी टूट','बच्चा हिल नहीं','बच्चा नहीं हिल','बच्चे की हलचल नहीं','हलचल बंद',
+    'prasav pida','prasav dard','pani ki thaili phat','bachcha hil nahi','bachha hil nahi','bacha hil nahi','halchal band',
+    // mental health
+    'आत्महत्या','खुदकुशी','जान दे','मरना चाहत','मर जाना चाहत','खुद को नुकसान','सुसाइड',
+    'aatmahatya','khudkushi','jaan de','marna chahta','marna chahti',
+    // allergy and severe symptoms
+    'जीभ सूज','होंठ सूज','गला सूज','गले में सूजन','असहनीय','बर्दाश्त नहीं','सहन नहीं हो','बहुत तेज बुखार','बहुत ज्यादा बुखार','बहुत तेज़ बुखार',
+    'asahniya','bardasht nahi','sehan nahi ho','bahut tez bukhar','bahut zyada bukhar'
+  ],
+  mr: [
+    // breathing
+    'श्वास','दम लागत','दम लागतो','दम लागणे','दम लागल','धाप लागत','धाप लागतो','धाप लागणे','धापा','दम कोंडत','दम कोंडल','दम घुटत','घरघर','निळे ओठ','ओठ निळे','निळा पडल','निळी पडल','ब्रीदिंग प्रॉब्लेम',
+    // chest
+    'छातीत दुखणे','छातीदुखी','छातीत दुखत','छाती दुखत','छाती दुखणे','छातीत जड','छातीत दाब','छातीवर दाब','छातीत आवळ','छातीत कळ','हृदयात दुखत','हृदयविकाराचा झटका','हार्ट अटॅक','चेस्ट पेन','छातीत ~ दुख','छाती ~ दुख','छातीत ~ वेदना','छातीत ~ जड','छातीवर ~ दाब','छातीत ~ दाब',
+    // consciousness, fits
+    'बेशुद्ध','बेशुद्धी','शुद्ध हरपल','शुद्धीवर नाही','शुद्धीत नाही','भान नाही','भान हरप','भोवळ येऊन पड','चक्कर येऊन पड','आकडी','फिट आली','फिट येत','झटके येत','झटके आल','झटका येत','झटके बसत','अपस्मार','मिरगी','अंग ताठ','मान अकडल','मान ताठ','प्रतिसाद देत नाही','जागा होत नाही','जागे होत नाही','अनकॉन्शियस','फिट्स',
+    // stroke
+    'लकवा','पक्षाघात','अर्धांगवायू','तोंड वाकडे','तोंड वाकड','चेहरा वाकडा','एका बाजूला','एका बाजूची','अर्धे शरीर','बोलता येत नाही','बोलता येत','बोलणे अडखळ','बोलणे अस्पष्ट','जीभ जड','हात पाय हलवता येत नाही','हलवता येत नाही','अचानक दिसेनासे','दिसणे बंद',
+    // bleeding
+    'रक्त येत','रक्त पडत','रक्त जात','रक्तस्राव','रक्तस्त्राव','जास्त रक्त','रक्ताची उलटी','रक्ताच्या उलट्या','रक्त दिसत','रक्त दिसल','शौचातून रक्त','संडासातून रक्त','लघवीतून रक्त','लघवीत रक्त','काळी शौच','काळे संडास','काळी संडास','रक्ताची हगवण','ब्लीडिंग','रक्तासह','खोकल्यातून रक्त','खोकल्यात रक्त','नाकातून रक्त',
+    // bites, poison, injury
+    'साप चावल','सापाने चावल','सापाने दंश','सापाचा दंश','सर्पदंश','कुत्रा चावल','कुत्र्याने चावा','कुत्र्याने चावल','कुत्र्याचा चावा','माकडाने चावा','विंचू','विंचवाने','विषबाधा','विष प्राशन','विष पिल','विष खाल','विषारी','कीटकनाशक','किटकनाशक','उंदीर मारायचे','विजेचा झटका','करंट लाग','करंट बसल','बुडाला','बुडाली','बुडत','अपघात','डोक्याला मार','डोक्याला दुखापत','डोक्याला जखम','झाडावरून पडल','उंचावरून पडल','पूर्ण भाजल','खूप भाजल','गंभीर भाजल',
+    // not eating or drinking (babies, dehydration)
+    'खाणे शक्य नाही','खात नाही','जेवत नाही','जेवण जात नाही','जेवण करत नाही','अन्न जात नाही','खाता येत नाही','दूध पीत नाही','दूध घेत नाही','पाणी पीत नाही','पाणी पिऊ शकत नाही','पिता येत नाही','गिळता येत नाही','स्तनपान घेत नाही','दूध ओढत नाही','सर्व उलट्या होतात','सतत उलट्या','डोळे खोल गेल','डोळे आत गेल',
+    // pregnancy
+    'प्रसूती वेदना','प्रसव वेदना','प्रसूतीच्या वेदना','पाणी तुटल','पाण्याची पिशवी फुटल','बाळ हलत नाही','बाळाची हालचाल नाही',
+    // mental health
+    'आत्महत्या','जीव द्यायचा','मरावेसे वाटत','मरावंसं वाटत','मरायचे आहे','स्वतःला इजा','सुसाईड',
+    // allergy and severe symptoms
+    'जीभ सुजल','ओठ सुजल','घसा सुजल','जिभेला सूज','ओठांना सूज','घशाला सूज','असह्य','सहन होत नाही','तीव्र वेदना','प्रचंड ताप','खूप जास्त ताप','अतिताप'
+  ],
+  bn: [
+    // breathing
+    'শ্বাস','শ্বাসকষ্ট','দম বন্ধ','দম আটকে','দম নিতে','হাঁপাচ্ছে','হাঁপাচ্ছি','হাপাচ্ছে','হাপাচ্ছি','হাঁপানি','হাঁপ ধরা','ঠোঁট নীল','নীল হয়ে','ঘড়ঘড়','ব্রিদিং প্রবলেম',
+    // chest
+    'বুকে ব্যথা','বুক ব্যথা','বুকে যন্ত্রণা','বুকে চাপ','বুক চেপে','বুক ভারী','বুকে ভার','বুকের ব্যথা','বুকের মধ্যে ব্যথা','হৃদয়ে ব্যথা','হার্ট অ্যাটাক','হার্ট এটাক','চেস্ট পেইন','বুকে ~ ব্যথা','বুক ~ ব্যথা','বুকে ~ যন্ত্রণা','বুকে ~ চাপ','বুক ~ ভারী',
+    // consciousness, fits
+    'অজ্ঞান','অচেতন','সংজ্ঞাহীন','জ্ঞান নেই','জ্ঞান হারা','জ্ঞান হারিয়ে','হুঁশ নেই','হুশ নেই','সাড়া দিচ্ছে না','ডাকলে সাড়া','খিঁচুনি','খিচুনি','ফিট হয়','ফিট হচ্ছে','ফিট হয়েছে','মৃগী','হাত পা শক্ত হয়ে','শরীর শক্ত হয়ে','ঘাড় শক্ত','ফিটস',
+    // stroke
+    'পক্ষাঘাত','প্যারালাইসিস','স্ট্রোক','মুখ বেঁকে','মুখ বাঁকা','এক দিকে','এক পাশ','আধা শরীর','অর্ধেক শরীর','কথা বলতে পারছে না','কথা বলতে পারছি না','কথা বলতে পারে না','কথা জড়িয়ে','কথা জড়াচ্ছে','হাত অবশ','পা অবশ','শরীর অবশ','অবশ হয়ে','অবশ লাগ','হাত নড়ছে না','নাড়াতে পারছে না','নাড়তে পারছে না','হঠাৎ দেখতে পাচ্ছে না','হঠাৎ দেখতে পাচ্ছি না','হঠাৎ দেখা বন্ধ','দৃষ্টি হারা',
+    // bleeding
+    'রক্ত','রক্তপাত','রক্তক্ষরণ','কালো পায়খানা','কালো পাইখানা','ব্লিডিং',
+    // bites, poison, injury
+    'সাপে কামড়','সাপ কামড়','সাপের কামড়','সর্পাঘাত','কুকুরে কামড়','কুকুর কামড়','কুকুরের কামড়','বানর কামড়','বিছে কামড়','বিছের কামড়','বিষ খেয়ে','বিষ খাও','বিষক্রিয়া','বিষাক্ত','কীটনাশক','পোকা মারার','ইঁদুর মারার','ইলেকট্রিক শক','কারেন্টের শক','কারেন্ট লেগে','বিদ্যুতের শক','ডুবে গেছে','জলে ডুবে','দুর্ঘটনা','অ্যাক্সিডেন্ট','এক্সিডেন্ট','মাথায় আঘাত','মাথায় চোট','গাছ থেকে পড়','ছাদ থেকে পড়','উঁচু থেকে পড়','খুব পুড়ে','মারাত্মক পুড়ে','অনেক পুড়ে',
+    // not eating or drinking (babies, dehydration)
+    'খেতে পারছি না','খেতে পারছে না','খেতে পারে না','কিছু খাচ্ছে না','কিছু খাচ্ছি না','কিছুই খাচ্ছে না','খাওয়া বন্ধ','দুধ খাচ্ছে না','দুধ খাচ্ছি না','মায়ের দুধ খাচ্ছে না','জল খেতে পারছে না','জল খাচ্ছে না','গিলতে পারছে না','গিলতে পারছি না','সব বমি','বারবার বমি','চোখ বসে','চোখ গর্তে',
+    // pregnancy
+    'প্রসব ব্যথা','প্রসব বেদনা','জল ভেঙে','বাচ্চা নড়ছে না','নড়াচড়া নেই','নড়াচড়া কম',
+    // mental health
+    'আত্মহত্যা','মরে যেতে ইচ্ছা','মরতে ইচ্ছা','মরে যেতে চা','নিজেকে আঘাত','সুইসাইড',
+    // allergy and severe symptoms
+    'জিভ ফুলে','ঠোঁট ফুলে','গলা ফুলে','অসহ্য ব্যথা','অসহ্য যন্ত্রণা','অসহ্য কষ্ট','সহ্য করতে পারছি না','সহ্য হচ্ছে না','তীব্র ব্যথা','প্রচণ্ড ব্যথা','খুব বেশি জ্বর','অনেক বেশি জ্বর','প্রচণ্ড জ্বর'
+  ]
+},
+amber: {
+  en: [
+    // fever, chills
+    'fever','feverish','high fever','high temperature','temperature is high','running a temperature','running temperature','hot body','body is hot','body feels hot','feels hot','burning up','hot to touch','chills','shivering','shivers','rigors','night sweats','sweating at night','cold sweat',
+    // vomiting
+    'vomiting','vomit','vomited','throwing up','threw up','puking','nausea','nauseous','feel like vomiting','feeling like vomiting','retching',
+    // stomach
+    'pain in the stomach','pain in stomach','stomach pain','stomach ache','stomach hurts','belly pain','tummy pain','abdominal','abdomen pain','pain in abdomen','cramps','cramping','stomach cramps','stomach ~ pain','stomach ~ hurt','belly ~ pain','tummy ~ pain','abdomen ~ pain',
+    // diarrhea
+    'loose motions','loose motion','loose stool','diarrhea','diarrhoea','watery stool','watery motions','dysentery',
+    // weakness, dizzy
+    'weak','weakness','tired','tiredness','fatigue','exhausted','no energy','dizzy','dizziness','giddy','giddiness','light headed','lightheaded','vertigo','spinning',
+    // appetite
+    'loss of appetite','no appetite','not hungry','not feeling hungry','reduced appetite','dont feel like eating',"don't feel like eating",
+    // swelling, wounds, injury
+    'swell','swollen','boils','a boil','abscess','infected','infection','wound','deep cut','bleeding','bleeds','nosebleed','nose bleed','burn','burnt','fracture','broken bone','broken arm','broken leg','sprain','injury','injured',
+    // jaundice, urine
+    'yellow eyes','yellow skin','jaundice','burning urine','burning while passing urine','burning during urination','painful urination','pain while passing urine','frequent urination','passing urine again and again','not passing urine','no urine',
+    // eyes, heart
+    'blurred vision','blurry vision','cannot see properly','cannot see clearly','cant see properly',"can't see properly",'double vision','palpitation','heart racing','heart beating fast','fast heartbeat','heart is pounding',
+    // BP, sugar, TB, weight, allergy, mind
+    'high bp','low bp','high blood pressure','low blood pressure','bp is high','bp is low','blood pressure is high','blood pressure is low','high sugar','low sugar','sugar is high','sugar is low','weight loss','losing weight','lost weight','tuberculosis','cough for weeks','coughing for weeks','cough since weeks','allergic reaction','anxiety','panic attack','depressed','depression'
+  ],
+  hi: [
+    // fever, chills
+    'बुखार','बुख़ार','बुखर','तेज बुखार','तेज़ बुखार','ज्वर','शरीर गरम','बदन गरम','शरीर तप','बदन तप','शरीर जल','कंपकंपी','कपकपी','रात को पसीना','रात में पसीना','ठंडा पसीना','फीवर','फिवर',
+    'bukhar','bukhaar','tez bukhar','jwar','sharir garam','badan garam','badan tap','sharir tap','kampkampi','kapkapi','raat ko paseena','thanda paseena',
+    // vomiting
+    'उल्टी','उलटी','उल्टि','उलटि','उबकाई','मितली','मिचली','जी मिचला','जी मचल','जी घबरा','वोमिटिंग','वॉमिटिंग','वोमिट',
+    'ulti','ji michla','ji machal','ji ghabra','matli','michli','ubkai',
+    // stomach
+    'पेट दर्द','पेट में दर्द','पेट दुख','पेट में मरोड़','मरोड़','पेट में ऐंठन','पेट में जलन','पेट में','पेटदर्द','स्टमक पेन','स्टमक एक','बेली पेन',
+    'pet dard','pet mein dard','pet me dard','pet dukh','pet mein marod','marod','pet mein jalan','pet mein','पेट ~ दर्द','pet ~ dard',
+    // diarrhea
+    'दस्त','पतला पाखाना','पतले दस्त','पतला पैखाना','लूज मोशन','लूज़ मोशन','लुज मोशन','डायरिया','पेचिश','हैजा',
+    'dast','patla pakhana','patle dast','patla paikhana','loose motion','loose motions','pechish','haija',
+    // weakness, dizzy
+    'कमज़ोरी','कमजोरी','कमजोर','कमज़ोर','थकान','थकावट','थका','सुस्ती','चक्कर','सिर घूम','सर घूम','अंधेरा छा','आंखों के आगे अंधेरा','वीकनेस',
+    'kamzori','kamzor','thakan','thakawat','thaka hua','chakkar','sir ghoom','sar ghoom','andhera chha',
+    // appetite
+    'भूख नहीं','भूख कम','भूख न लग','खाने का मन नहीं','खाने की इच्छा नहीं',
+    'bhookh nahi','bhook nahi','bhookh kam','khane ka man nahi',
+    // swelling, wounds, injury
+    'सूजन','सूजा','सूजी हुई','सूज गय','सूज रह','सूजे','चोट','घाव','कट गया','जल गया','जला','फ्रैक्चर','हड्डी टूट','मवाद','फोड़ा','इंफेक्शन','संक्रमण','खून की कमी',
+    'sujan','suj gaya','chot lag','chot aayi','chot ayi','ghav','kat gaya','jal gaya','haddi toot','mawad','phoda','khoon ki kami',
+    // jaundice, urine
+    'पीलिया','पीली आंख','आंखें पीली','आँखें पीली','पीलापन','पेशाब में जलन','पेशाब में दर्द','पेशाब बार बार','पेशाब नहीं','पेशाब रुक','पेशाब कम',
+    'peeliya','pila pan','aankhen peeli','peshab mein jalan','peshab mein dard','peshab baar baar','peshab nahi','peshab ruk',
+    // eyes, numbness, palpitations
+    'धुंधला','दिखाई नहीं दे','कम दिखाई','सुन्न','घबराहट','धड़कन तेज','दिल घबरा','दिल की धड़कन','दिल धड़क',
+    'dhundhla','dikhai nahi de','kam dikhai','ghabrahat','dhadkan tez','dil ghabra','dil dhadak',
+    // BP, sugar, TB, weight, sharp pain
+    'बीपी हाई','बीपी लो','बीपी बढ़','बीपी कम','हाई बीपी','लो बीपी','उच्च रक्तचाप','निम्न रक्तचाप','शुगर हाई','शुगर लो','शुगर बढ़','शुगर कम','वजन कम','वज़न कम','वजन घट','रात को खांसी','हफ्तों से खांसी','दो हफ्ते से खांसी','तपेदिक','टीबी','तेज दर्द','तेज़ दर्द',
+    'bp high','bp low','high bp','low bp','sugar high','sugar low','weight kam','wajan kam','wazan kam','hafton se khansi','tapedik','tez dard'
+  ],
+  mr: [
+    // fever, chills
+    'ताप','ज्वर','ताप आला','तापाने','अंगात ताप','अंग गरम','अंग तापल','तापल','थंडी वाजून','हुडहुडी','कणकण','अंगात कणकण','फीवर','रात्री घाम','थंड घाम',
+    // vomiting
+    'उलट्या','उलटी','उलटीसारखे','मळमळ','ओकारी','वांती','वोमिटिंग',
+    // stomach
+    'पोट दुखणे','पोटदुखी','पोट दुखत','पोटात दुखत','पोटात दुखणे','पोटात कळ','पोटात मुरडा','पोटात जळजळ','पोटात ढवळ','स्टमक पेन','पोट ~ दुख','पोटात ~ दुख',
+    // diarrhea
+    'जुलाब','पातळ संडास','पातळ शौच','हगवण','आमांश','लूज मोशन','डायरिया',
+    // weakness, dizzy
+    'अशक्तपणा','अशक्त','थकवा','थकल्यासारखे','थकलो','थकले','त्राण नाही','चक्कर','भोवळ','डोळ्यासमोर अंधार','डोके गरगर','गरगर','वीकनेस',
+    // appetite
+    'भूक नाही','भूक कमी','भूक लागत नाही','खावेसे वाटत नाही','खाण्याची इच्छा नाही',
+    // swelling, wounds, injury
+    'सूज आल','सूज आहे','सूजन','सुजल','सुजलाय','जखम','दुखापत','भाजल','फ्रॅक्चर','हाड मोडल','गळू','इन्फेक्शन','संसर्ग','रक्ताची कमतरता',
+    // jaundice, urine
+    'कावीळ','डोळे पिवळे','पिवळे डोळे','लघवीला जळजळ','लघवीत जळजळ','लघवी होत नाही','लघवीला त्रास','वारंवार लघवी',
+    // eyes, numbness, palpitations
+    'धूसर दिसत','अंधुक दिसत','डोळ्यांनी दिसत नाही','कमी दिसत','बधिर','मुंग्या','धडधड','छातीत धडधड','छातीत जळजळ','घाबरल्यासारखे',
+    // BP, sugar, TB, weight, sharp pain
+    'बीपी वाढ','बीपी कमी','उच्च रक्तदाब','कमी रक्तदाब','रक्तदाब वाढ','रक्तदाब कमी','हाय बीपी','लो बीपी','शुगर वाढ','शुगर कमी','वजन कमी','वजन घट','रात्री खोकला','आठवड्यांपासून खोकला','क्षयरोग','टीबी','जोराचे दुखत','खूप दुखत','तीव्र दुखत'
+  ],
+  bn: [
+    // fever, chills
+    'জ্বর','জ্বর এসেছে','গা গরম','গায়ে জ্বর','শরীর গরম','গা পুড়ে','কাঁপুনি','জ্বর জ্বর','ফিভার','রাতে ঘাম','ঠান্ডা ঘাম',
+    // vomiting
+    'বমি','বমি বমি','বমি ভাব','বমি হচ্ছে','বমি করছে','বমি হয়েছে','গা গোলানো','গা গুলোচ্ছে','গা গুলিয়ে','ওগরাচ্ছে','ভমিটিং',
+    // stomach
+    'পেটে ব্যথা','পেট ব্যথা','পেট কামড়','পেটে কামড়','পেটে যন্ত্রণা','পেট ফাঁপা','পেট ফুলে','স্টমাক পেইন','পেটে ~ ব্যথা','পেট ~ ব্যথা',
+    // diarrhea
+    'পাতলা পায়খানা','পাতলা পাইখানা','পাতলা বাহ্যে','ডায়রিয়া','আমাশয়','কলেরা','লুজ মোশন',
+    // weakness, dizzy
+    'দুর্বল','দুর্বলতা','ক্লান্ত','ক্লান্তি','শরীরে বল নেই','শক্তি নেই','মাথা ঘোরা','মাথা ঘুরছে','মাথা ঘুরে','চোখে অন্ধকার','ঝিম','উইকনেস',
+    // appetite
+    'খিদে নেই','খিদে কম','ক্ষুধা নেই','ক্ষুধা কম','খেতে ইচ্ছে করছে না','খেতে ইচ্ছা করে না',
+    // swelling, wounds, injury
+    'ফুলে গেছে','ফুলে আছে','ফুলে উঠ','ফোলা','পুঁজ','ফোড়া','কেটে গেছে','আঘাত','চোট','পুড়ে গেছে','হাড় ভেঙে','ফ্র্যাকচার','সংক্রমণ','ইনফেকশন','রক্তশূন্যতা','রক্তস্বল্পতা',
+    // jaundice, urine
+    'জন্ডিস','চোখ হলুদ','হলুদ চোখ','গা হলুদ','প্রস্রাবে জ্বালা','প্রস্রাবে ব্যথা','প্রস্রাব বন্ধ','প্রস্রাব হচ্ছে না','প্রস্রাব কম','বারবার প্রস্রাব','প্রস্রাবের সময় জ্বালা',
+    // eyes, numbness, palpitations
+    'ঝাপসা দেখ','ঝাপসা লাগ','দেখতে পাচ্ছি না','দেখতে পাচ্ছে না','দেখতে পায় না','ঝিনঝিন','বুক ধড়ফড়','ধড়ফড়','বুক জ্বালা','বুকে জ্বালা','হৃদস্পন্দন',
+    // BP, sugar, TB, weight, sharp pain
+    'প্রেশার বেড়ে','প্রেশার কমে','প্রেশার বেশি','প্রেশার কম','রক্তচাপ বেশি','রক্তচাপ কম','রক্তচাপ বেড়ে','রক্তচাপ কমে','উচ্চ রক্তচাপ','নিম্ন রক্তচাপ','সুগার বেড়ে','সুগার কমে','সুগার বেশি','সুগার কম','ওজন কমে','ওজন কমছে','রাতে কাশি','সপ্তাহ ধরে কাশি','যক্ষ্মা','টিবি','ব্যথা বেশি','খুব ব্যথা'
+  ]
+},
+green: {
+  en: [
+    'headache','head ache','head pain','pain in the head','migraine','cough','cold','runny nose','blocked nose','stuffy nose','sneezing','sore throat','throat pain','pain in the throat','throat infection','itchy throat',
+    'body ache','body pain','body pains','aching body','muscle pain','muscle ache','joint pain','joint pains','pain in joints','knee pain','back pain','backache','neck pain','leg pain','pain in leg','arm pain','hand pain','shoulder pain','foot pain','heel pain','leg cramps','cramp in leg',
+    'mild','rash','itch','pimple','skin problem','dry skin','hives','scabies','ringworm','allergy',
+    'head ~ pain','head ~ hurt','back ~ pain','knee ~ pain','joint ~ pain','leg ~ pain','body ~ pain','body ~ ache','throat ~ pain','throat ~ hurt','ear ~ pain','eye ~ pain','tooth ~ pain',
+    'ear pain','earache','pain in the ear','eye pain','pain in the eye','red eyes','watery eyes','toothache','tooth pain','tooth ache','gum pain',
+    'constipation','hard stool','not passing stool','gas','acidity','heartburn','indigestion','bloating','bloated','burping','belching','upset stomach','stomach upset','loss of taste','cannot sleep','not able to sleep','trouble sleeping','sleeplessness','insomnia'
+  ],
+  hi: [
+    'sar dard','sir dard','khansi','badan dard','halka','thoda','सिरदर्द','खांसी','बदन दर्द','हल्का','थोड़ा',
+    // cough, cold, throat
+    'खाँसी','खासी','खांस','खाँस','कफ','बलगम','जुकाम','ज़ुकाम','जुखाम','सर्दी','नाक बह','नाक बंद','छींक','गला खराब','गले में दर्द','गले में खराश','गला दर्द','खराश','गला बैठ','टॉन्सिल','कोल्ड','ठंड लग','जाड़ा लग',
+    'khasi','khaans','balgam','zukam','jukam','jukham','nazla','sardi','naak beh','naak band','chheenk','chhink','gala kharab','gale mein dard','gala dard','gale me dard','kharash','gala baith','thand lag',
+    // headache, body pain
+    'सिर ~ दर्द','सर ~ दर्द','माथे ~ दर्द','बदन ~ दर्द','शरीर ~ दर्द','कमर ~ दर्द','पीठ ~ दर्द','जोड़ों ~ दर्द','घुटने ~ दर्द','गले ~ दर्द','कान ~ दर्द','आंख ~ दर्द','दांत ~ दर्द','sir ~ dard','sar ~ dard','badan ~ dard','kamar ~ dard','peeth ~ dard','gale ~ dard','kaan ~ dard','daant ~ dard',
+    'सिर दर्द','सर दर्द','सरदर्द','सिर में दर्द','सर में दर्द','माथे में दर्द','माथा दर्द','माइग्रेन','सिर भारी','सर भारी','हेडेक','हेड एक','शरीर दर्द','शरीर में दर्द','बदन टूट','हाथ पैर दर्द','हाथ पैर में दर्द','जोड़ों में दर्द','जोड़ों का दर्द','जोड़ो में दर्द','घुटने में दर्द','घुटनों में दर्द','कमर दर्द','कमर में दर्द','पीठ दर्द','पीठ में दर्द','गर्दन दर्द','गर्दन में दर्द','पैर में दर्द','टांग में दर्द','मांसपेशियों में दर्द','बॉडी पेन','बॉडी एक',
+    'sar mein dard','sir mein dard','maathe mein dard','mathe mein dard','migraine','sir bhaari','badan toot','sharir dard','body pain','haath pair dard','jodon mein dard','jodo mein dard','ghutne mein dard','ghutno mein dard','kamar dard','kamar mein dard','peeth dard','peeth mein dard','gardan dard','gardan mein dard','pair mein dard','taang mein dard',
+    // stomach upset, gas, constipation
+    'पेट खराब','पेट फूल','पेट भारी','गैस','अपच','एसिडिटी','अम्लता','खट्टी डकार','डकार','कब्ज','पेट साफ नहीं','सीने में जलन',
+    'pet kharab','pet phool','pet fula','pet bhari','apach','khatti dakar','dakar','kabz','kabj','pet saaf nahi','seene mein jalan',
+    // skin, eyes, ears, teeth
+    'खुजली','चकत्ते','दाने','फुंसी','एलर्जी','दाद','आंख दर्द','आँख दर्द','आंख में दर्द','आंख लाल','आँखें लाल','आंखों में पानी','कान दर्द','कान में दर्द','कान से पानी','दांत दर्द','दाँत दर्द','दांत में दर्द',
+    'khujli','khujali','chakatte','daane','funsi','phunsi','aankh dard','aankh mein dard','aankh lal','aankhen lal','kaan dard','kaan mein dard','kaan se pani','daant dard','daant mein dard',
+    // sleep, taste
+    'नींद नहीं','नींद न आ','अनिद्रा','स्वाद नहीं','मुंह का स्वाद',
+    'neend nahi','neend na aa','anidra','swad nahi','swaad nahi'
+  ],
+  mr: [
+    'खोकला','डोकेदुखी','अंगदुखी','हलका','थोडा','डोके दुखत','अंग दुखत',
+    // cough, cold, throat
+    'खोकल्या','खोकत','खोकून','कफ','सर्दी','नाक वाहत','नाक गळत','नाक चोंदल','शिंका','घसा दुखत','घशात खवखव','खवखव','घसा खराब','घसा बसल','टॉन्सिल','कोल्ड','थंडी वाजत',
+    // headache, body pain
+    'डोके ~ दुख','डोकं ~ दुख','डोक्यात ~ दुख','अंग ~ दुख','पाठ ~ दुख','कंबर ~ दुख','घसा ~ दुख','कान ~ दुख','डोळे ~ दुख','दात ~ दुख',
+    'डोके दुखणे','डोकं दुखत','डोकं दुखणे','डोक्यात दुखत','डोके जड','डोकं जड','मायग्रेन','हेडेक','अंग दुखणे','अंग मोडून','अंग मोडल्यासारखे','अंग दुखतय','सांधेदुखी','सांधे दुखत','गुडघेदुखी','गुडघे दुखत','कंबरदुखी','कंबर दुखत','पाठदुखी','पाठ दुखत','मान दुखत','पाय दुखत','हात दुखत','स्नायू दुखत','बॉडी पेन',
+    // stomach upset, gas, constipation
+    'पोट फुगत','पोट फुगल','पोट बिघडल','पोट साफ होत नाही','अपचन','गॅस','अॅसिडिटी','आम्लपित्त','पित्त','आंबट ढेकर','ढेकर','बद्धकोष्ठ','मलावरोध','शौचास होत नाही','संडास होत नाही',
+    // skin, eyes, ears, teeth
+    'खाज येत','खाज सुटत','अंगाला खाज','पुरळ','अंगावर फोड','फोड आल','अॅलर्जी','नायटा','गजकर्ण','डोळे दुखत','डोळे लाल','डोळ्यातून पाणी','कान दुखत','कानातून पाणी','दात दुखत','दातदुखी',
+    // sleep, taste
+    'झोप येत नाही','झोप लागत नाही','निद्रानाश','चव नाही','तोंडाला चव नाही'
+  ],
+  bn: [
+    'কাশি','মাথাব্যথা','গায়ে ব্যথা','হালকা','সামান্য','মাথা ব্যথা','মাথা ধরা','গা ব্যথা',
+    // cough, cold, throat
+    'কাশছে','কাশতে','সর্দি','নাক দিয়ে জল','নাক বন্ধ','হাঁচি','গলা ব্যথা','গলা খুসখুস','গলায় ব্যথা','কফ','গলা বসে','টনসিল','কোল্ড','শীত শীত','শীত করছে','শীত লাগছে',
+    // headache, body pain
+    'মাথায় ~ ব্যথা','মাথা ~ ব্যথা','গায়ে ~ ব্যথা','গা ~ ব্যথা','কোমরে ~ ব্যথা','পিঠে ~ ব্যথা','গলায় ~ ব্যথা','কানে ~ ব্যথা','চোখে ~ ব্যথা','দাঁতে ~ ব্যথা',
+    'মাথা ধরে','মাথা ধরছে','মাথায় ব্যথা','মাথা ভার','মাইগ্রেন','হেডেক','শরীর ব্যথা','গা হাত পা ব্যথা','হাত পা ব্যথা','গাঁটে ব্যথা','জয়েন্টে ব্যথা','হাঁটুতে ব্যথা','কোমরে ব্যথা','কোমর ব্যথা','পিঠে ব্যথা','পিঠ ব্যথা','ঘাড়ে ব্যথা','ঘাড় ব্যথা','পায়ে ব্যথা','হাতে ব্যথা','মাংসপেশীতে ব্যথা','বডি পেইন','পায়ে খিল','খিল ধরা',
+    // stomach upset, gas, constipation
+    'পেট খারাপ','গ্যাস','অম্বল','বদহজম','টক ঢেকুর','ঢেকুর','পেট ভার','কোষ্ঠকাঠিন্য','পায়খানা হচ্ছে না','পায়খানা পরিষ্কার হচ্ছে না',
+    // skin, eyes, ears, teeth
+    'চুলকানি','চুলকাচ্ছে','র‍্যাশ','ফুসকুড়ি','ঘামাচি','এলার্জি','অ্যালার্জি','চোখ ব্যথা','চোখে ব্যথা','চোখ লাল','চোখ দিয়ে জল','কান ব্যথা','কানে ব্যথা','কান দিয়ে পানি','দাঁত ব্যথা','দাঁতে ব্যথা',
+    // sleep, taste
+    'ঘুম আসছে না','ঘুম হচ্ছে না','অনিদ্রা','মুখে স্বাদ নেই','স্বাদ নেই'
+  ]
+},
+neutral: [
+  'खून की जांच','खून की जाँच','खून जांच','खून का टेस्ट','खून की रिपोर्ट','खून का रिश्ता','khoon ki jaanch','khoon ki janch','khoon test',
+  'दस्तावेज','दस्तावेज़','दस्तखत','दस्तक','दौरान','सांसद','सांसारिक','विश्वास','বিশ্বাস',
+  'রক্তচাপ','রক্তের চাপ','রক্ত পরীক্ষা','রক্তের পরীক্ষা','রক্তদান','রক্তের গ্রুপ','রক্তের রিপোর্ট'
+]
+};
+
+function norm(s){
+  return String(s == null ? '' : s)
+    .normalize('NFC')
+    .replace(/[​-‍⁠﻿]/g, '')
+    .replace(/[‘’ʼ`´]/g, "'")
+    .replace(/[-_‐-―]/g, ' ')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// "~" in a keyword stands for up to three intervening words ("chest ~ pain" hits "chest has very bad pain").
+var GAP = '(?: [^\\s.,;:!?\\u0964]+){0,3} ';
+function reEsc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+var FLAGS = (function(){
+  var seen = {};   // severity order: a word listed in two buckets keeps the higher one
+  return [['red','var(--coral)'],['amber','var(--amber)'],['green','var(--mint)'],['neutral',null]].map(function(b){
+    var src = b[0] === 'neutral' ? VOCAB.neutral : Object.keys(VOCAB[b[0]]).reduce(function(a,k){ return a.concat(VOCAB[b[0]][k]); }, []);
+    var words = [];
+    src.forEach(function(w){
+      var n = norm(w);
+      if(!n || seen[n]) return;
+      seen[n] = 1;
+      var latin = /^[a-z0-9]/.test(n);
+      var re = n.indexOf(' ~ ') === -1 ? null :
+        new RegExp((latin ? '(^|[^a-z0-9])' : '()') + '(' + n.split(' ~ ').map(reEsc).join(GAP) + ')', 'g');
+      words.push({w:n, latin:latin, re:re});
+    });
+    return {bucket:b[0], color:b[1], words:words};
+  });
+})();
+
+// Every keyword hit in the text, minus hits swallowed by a longer keyword that covers them.
+function scan(text){
+  var t = norm(text), ms = [];
+  FLAGS.forEach(function(f){
+    f.words.forEach(function(k){
+      if(k.re){
+        k.re.lastIndex = 0;
+        var m;
+        while((m = k.re.exec(t)) !== null){
+          var s0 = m.index + m[1].length;
+          ms.push({w:t.slice(s0, s0 + m[2].length), b:f.bucket, color:f.color, s:s0, e:s0 + m[2].length});
+          if(m[0].length === 0) k.re.lastIndex++;
+        }
+        return;
+      }
+      var i = t.indexOf(k.w);
+      while(i !== -1){
+        if(!k.latin || i === 0 || !/[a-z0-9]/.test(t.charAt(i-1))) ms.push({w:k.w, b:f.bucket, color:f.color, s:i, e:i + k.w.length});
+        i = t.indexOf(k.w, i+1);
+      }
+    });
+  });
+  return ms.filter(function(m){
+    return !ms.some(function(n){ return n !== m && n.s <= m.s && n.e >= m.e && (n.e-n.s) > (m.e-m.s); });
+  }).filter(function(m){ return m.b !== 'neutral'; }).sort(function(a,b){ return a.s - b.s; })
+    .filter(function(m,i,arr){ return i === 0 || m.s !== arr[i-1].s || m.e !== arr[i-1].e; });
+}
+
+function classify(text){
+  var found = {red:[], amber:[], green:[]};
+  scan(text).forEach(function(m){
+    if(!found[m.b].some(function(r){ return r.phrase === m.w; })) found[m.b].push({phrase:m.w, color:m.color});
+  });
+  var level, reasons;
+  if(found.red.length){ level='HIGH'; reasons = found.red.concat(found.amber).slice(0,3); }
+  else if(found.amber.length){ level='MEDIUM'; reasons = found.amber.slice(0,3); }
+  else if(found.green.length){ level='LOW'; reasons = found.green.slice(0,3); }
+  else { level='UNCERTAIN'; reasons = []; }
+  var count = found.red.length + found.amber.length + found.green.length;
+  return {level:level, reasons:reasons, symptomCount: Math.max(count, 1)};
+}
+
+// Speech engines return several guesses; keep the one that mentions the most known symptoms.
+function symptomScore(text){ return scan(text).length; }
+function bestAlternative(result){
+  var best = result[0], bestScore = symptomScore(best.transcript);
+  for(var a = 1; a < result.length; a++){
+    var sc = symptomScore(result[a].transcript);
+    if(sc > bestScore){ best = result[a]; bestScore = sc; }
+  }
+  return best;
+}
+
+function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+// ---------- vitals ----------
+// Screening rules only (not a diagnosis): red => HIGH, amber lifts LOW/UNCERTAIN to MEDIUM.
+function parseVitals(src){
+  function n(x, lo, hi){ var f = parseFloat(x); return (isFinite(f) && f>=lo && f<=hi) ? f : null; }
+  var t = parseFloat(src.temp);
+  if(isFinite(t) && t>=90 && t<=110) t = Math.round((t-32)*50/9)/10; // typed in °F
+  return { temp:n(t,30,45), pulse:n(src.pulse,20,250), spo2:n(src.spo2,50,100) };
+}
+function hasAnyVital(v){ return v.temp!=null || v.pulse!=null || v.spo2!=null; }
+function vitalFlags(v, age){
+  var out = [];
+  if(!v) return out;
+  if(v.temp!=null){
+    if(v.temp>=40) out.push({key:'temp', sev:'red', phrase:'Very high fever ('+v.temp+'°C)'});
+    else if(v.temp>=38.5) out.push({key:'temp', sev:'amber', phrase:'High fever ('+v.temp+'°C)'});
+    else if(v.temp<35.5) out.push({key:'temp', sev:'amber', phrase:'Low body temperature ('+v.temp+'°C)'});
+  }
+  if(v.spo2!=null && v.spo2<94) out.push({key:'spo2', sev:'red', phrase:'Low oxygen (SpO2 '+v.spo2+'%)'});
+  if(v.pulse!=null){
+    var hi = age<=1 ? 160 : age<=5 ? 140 : 120;
+    var lo = age<=1 ? 90 : age<=5 ? 70 : age<=12 ? 60 : 50;
+    if(v.pulse>hi) out.push({key:'pulse', sev:'amber', phrase:'Fast pulse ('+v.pulse+' bpm)'});
+    else if(v.pulse<lo) out.push({key:'pulse', sev:'amber', phrase:'Slow pulse ('+v.pulse+' bpm)'});
+  }
+  return out;
+}
+function vitalsHintHtml(){
+  var v = parseVitals(draft), parts = [];
+  [['temp','temperature'],['pulse','pulse'],['spo2','SpO2']].forEach(function(k){
+    if(String(draft[k[0]]||'').length && v[k[0]]==null) parts.push('<div class="vh sev-amber">Check the '+k[1]+' value</div>');
+  });
+  if(!parts.length && String(draft.temp||'').length && parseFloat(draft.temp)>=90 && v.temp!=null) parts.push('<div class="vh note">'+esc(draft.temp)+'&deg;F = '+v.temp+'&deg;C</div>');
+  vitalFlags(v, draft.age).forEach(function(f){
+    parts.push('<div class="vh sev-'+f.sev+'">'+esc(f.phrase)+' &mdash; raises urgency</div>');
+  });
+  if(!parts.length) return '<div>Fever (38.5&deg;C or more) or low oxygen (below 94%) raises urgency automatically.</div>';
+  return parts.join('');
+}
+function vitalInput(key, label, unit, mode, icon){
+  return '<label class="vin"><span class="vin-h">'+ic(icon)+label+'</span>' +
+    '<input id="vt-'+key+'" type="text" inputmode="'+mode+'" autocomplete="off" maxlength="5" placeholder="&ndash;" oninput="App.setVital(\''+key+'\',this)" value="'+esc(draft[key]||'')+'">' +
+    '<span class="vin-u">'+unit+'</span></label>';
+}
+function vitalsCard(r){
+  var v = r.vitals;
+  if(!v) return '';
+  var bad = {};
+  vitalFlags(v, r.age).forEach(function(f){ bad[f.key] = true; });
+  function tile(label, val, unit, key, icon){
+    if(val==null) return '';
+    return '<div class="vt'+(bad[key]?' bad':'')+'"><div class="vv">'+val+'<small>'+unit+'</small></div><div class="vl">'+ic(icon)+label+'</div></div>';
+  }
+  return '<div class="card"><div class="card-h"><span class="ib">'+ic('heart')+'</span><div><div class="card-t">Vitals</div><div class="card-s">Red means it raised the urgency</div></div></div>' +
+    '<div class="vt-row">'+tile('Temp',v.temp,'&deg;C','temp','thermo')+tile('Pulse',v.pulse,'bpm','pulse','heart')+tile('SpO&#8322;',v.spo2,'%','spo2','drop')+'</div></div>';
+}
+function vitalsText(v){
+  if(!v) return '';
+  var p = [];
+  if(v.temp!=null) p.push('Temp '+v.temp+'°C');
+  if(v.pulse!=null) p.push('Pulse '+v.pulse+' bpm');
+  if(v.spo2!=null) p.push('SpO2 '+v.spo2+'%');
+  return p.join(' · ');
+}
+
+// ---------- doctor notes (two-way cloud sync) ----------
+function noteTime(ts){
+  return ts ? new Date(ts).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+}
+function doctorNoteCard(r){
+  if(!r.doctorNote) return '';
+  return '<div class="dnote"><div class="card-h"><span class="ib">'+ic('steth')+'</span><div><div class="card-t">PHC doctor note</div><div class="card-s">'+esc(noteTime(r.doctorNoteTs))+'</div></div></div><p>'+esc(r.doctorNote)+'</p></div>';
+}
+var notesUnsub = null;
+function startDoctorNotesListener(){
+  if(!CLOUD_ENABLED || !db || notesUnsub) return;
+  notesUnsub = db.collection('patients').where('workerId','==',S.worker.id).onSnapshot(function(snap){
+    var fresh = 0, changed = false;
+    snap.docChanges().forEach(function(ch){
+      if(ch.type==='removed') return;
+      var d = ch.doc.data();
+      var p = S.patients.find(function(x){ return x.id===ch.doc.id; });
+      var t = Number(d.doctorNoteTs) || 0;
+      if(p && t && t > (p.doctorNoteTs||0)){
+        p.doctorNote = String(d.doctorNote||'');
+        p.doctorNoteTs = t;
+        changed = true; fresh++;
+      }
+    });
+    if(changed){ save(); safeRender(); }
+    if(fresh) showToast(fresh===1 ? 'PHC doctor sent a note on a patient' : fresh+' new notes from the PHC doctor');
+  }, function(err){ console.warn('doctor-notes listener stopped', err); notesUnsub = null; });
+}
+
+function showToast(msg){
+  var dev = document.getElementById('device');
+  if(!dev) return;
+  var old = document.getElementById('toast');
+  if(old && old.parentNode) old.parentNode.removeChild(old);
+  var t = document.createElement('div');
+  t.id = 'toast'; t.className = 'toast-in no-print'; t.setAttribute('role','status');
+  t.innerHTML = '<span class="ib">'+ic('steth')+'</span><span></span>';
+  t.lastChild.textContent = msg;
+  dev.appendChild(t);
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 6000);
+}
+
+function downloadFile(name, mime, content){
+  var blob = new Blob([content], {type:mime});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+}
+
+// Generic low-confidence masking for real (non-canned) transcripts: obscures a
+// handful of longer words so the confirm screen can flag them, same visual
+// language as the scripted low-confidence demo case.
+function maskGeneric(text){
+  var tokens = text.split(/(\s+)/);
+  var idxs = [];
+  tokens.forEach(function(t,i){ if(/[A-Za-z]{3,}/.test(t)) idxs.push(i); });
+  var n = Math.max(1, Math.min(3, Math.round(idxs.length*0.3)));
+  var pool = idxs.slice(), chosen = [];
+  while(chosen.length < n && pool.length){
+    chosen.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]);
+  }
+  var html = tokens.map(function(t,i){
+    if(chosen.indexOf(i) === -1) return esc(t);
+    var w = t;
+    var inner = w.length > 4 ? esc(w.slice(0, Math.ceil(w.length/2))) + '&hellip;' : '&mdash;&nbsp;&mdash;&nbsp;&mdash;';
+    return '<span class="masked">' + inner + '</span>';
+  }).join('');
+  return { html: html, count: chosen.length };
+}
+
+function loadState(){
+  try{ var s = JSON.parse(localStorage.getItem(LS_KEY)); if(s) return s; }catch(e){}
+  return null;
+}
+var S = loadState() || {
+  loggedIn:false,
+  worker:{id:'ASHA-4417', village:'Rampur'},
+  syncedFlash:false,
+  patients:[],
+  pin:null,
+  lang:'en',
+  histSearch:''
+};
+// back-fill new keys for existing stored state
+if(!S.pin) S.pin = null;
+if(!S.lang) S.lang = 'en';
+if(!S.histSearch) S.histSearch = '';
+if(!S.speechLang) S.speechLang = 'en';
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){} }
+
+var LANG = {
+  en:{
+    appName:'Sahayak', newPatient:'New Patient', home:'Home', history:'History', settings:'Settings',
+    signIn:'Sign in', enterPin:'Enter PIN', createPin:'Create PIN', setPinHint:'Choose a 4-digit PIN for this device',
+    workerLbl:'Worker', todayPts:'Today\'s patients', pendingSync:'Pending sync',
+    symptoms:'Describe the symptoms', pressSpeak:'Press to speak', listening:'Listening',
+    referNow:'Refer immediately', sameDay:'Same-day review', homeCare:'Home care advice', notSure:'Not confident',
+    finish:'Finish', close:'Close', back:'Back', print:'Print / Save', exportData:'Export data',
+    notes:'CHW notes (optional)', addPhoto:'Add photo', gpsLbl:'Location', searchPts:'Search patients…',
+    changeLang:'हिंदी में बदलें', referralSlip:'Referral slip', pinChanged:'PIN updated'
+  },
+  hi:{
+    appName:'सहायक', newPatient:'नया मरीज़', home:'होम', history:'इतिहास', settings:'सेटिंग',
+    signIn:'साइन इन', enterPin:'पिन डालें', createPin:'पिन बनाएं', setPinHint:'इस डिवाइस के लिए 4 अंकों का पिन चुनें',
+    workerLbl:'कार्यकर्ता', todayPts:'आज के मरीज़', pendingSync:'सिंक बाकी',
+    symptoms:'लक्षण बताएं', pressSpeak:'बोलने के लिए दबाएं', listening:'सुन रहा है',
+    referNow:'तुरंत रेफर करें', sameDay:'आज समीक्षा करें', homeCare:'घर पर देखभाल', notSure:'अनिश्चित',
+    finish:'समाप्त', close:'बंद करें', back:'वापस', print:'प्रिंट / सेव', exportData:'डेटा निर्यात',
+    notes:'CHW नोट्स (वैकल्पिक)', addPhoto:'फ़ोटो लें', gpsLbl:'स्थान', searchPts:'मरीज़ खोजें…',
+    changeLang:'Switch to English', referralSlip:'रेफरल पर्ची', pinChanged:'पिन बदल गया'
+  }
+};
+function L(k){ return (LANG[S.lang]||LANG.en)[k] || k; }
+
+var screen = S.loggedIn ? 'home' : 'login';
+var draft = {};
+var pinBuf = '';
+var pinMode = 'login'; // 'login' | 'change'
+var recCtx = null;
+var procTimers = [];
+var clockTimer = null;
+
+function pendingCount(){ return S.patients.filter(function(p){ return !p.synced; }).length; }
+function todayCount(){
+  var d0 = new Date(); d0.setHours(0,0,0,0);
+  return S.patients.filter(function(p){ return p.ts >= d0.getTime(); }).length;
+}
+
+function cleanupRecording(){
+  if(recCtx){
+    if(recCtx.raf) cancelAnimationFrame(recCtx.raf);
+    if(recCtx.timer) clearInterval(recCtx.timer);
+    if(recCtx.stream) recCtx.stream.getTracks().forEach(function(t){ t.stop(); });
+    if(recCtx.audioCtx && recCtx.audioCtx.state !== 'closed') { try{ recCtx.audioCtx.close(); }catch(e){} }
+    if(recCtx.recognition){
+      try{
+        recCtx.recognition.onend = null;
+        recCtx.recognition.onresult = null;
+        recCtx.recognition.onerror = null;
+        recCtx.recognition.stop();
+      }catch(e){}
+    }
+    recCtx = null;
+  }
+}
+function cleanupProcessing(){
+  procTimers.forEach(clearTimeout);
+  procTimers = [];
+}
+
+function navigate(name){
+  cleanupRecording();
+  cleanupProcessing();
+  screen = name;
+  render.entering = true;
+  render();
+  var sc = document.getElementById('screen');
+  if(sc) sc.scrollTop = 0;
+}
+
+function speechSupported(){ return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.95;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+// ---------- design system: icons, brand, shared pieces ----------
+var ICONS = {
+  back:'<path d="M15 18l-6-6 6-6"/>',
+  chev:'<path d="M9 18l6-6-6-6"/>',
+  arrow:'<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
+  home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>',
+  home2:'<path d="M3 11l9-7 9 7"/><path d="M6 10v10h12V10"/>',
+  history:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  settings:'<path d="M4 6h9"/><path d="M17 6h3"/><circle cx="15" cy="6" r="2"/><path d="M4 12h3"/><path d="M11 12h9"/><circle cx="9" cy="12" r="2"/><path d="M4 18h11"/><path d="M19 18h1"/><circle cx="17" cy="18" r="2"/>',
+  mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>',
+  keyboard:'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  minus:'<path d="M5 12h14"/>',
+  phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  play:'<path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/>',
+  cloud:'<path d="M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 9.2 4.5 4.5 0 0 0 7 18z"/>',
+  sync:'<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',
+  pin:'<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  thermo:'<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/>',
+  heart:'<path d="M20.8 8.6a5 5 0 0 0-8.8-3.2 5 5 0 0 0-8.8 3.2c0 5.4 8.8 11.4 8.8 11.4s8.8-6 8.8-11.4z"/><path d="M3.5 12h4l2-3 3 6 2-3h6"/>',
+  drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+  note:'<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/>',
+  send:'<path d="M21 3 10 14"/><path d="M21 3l-7 18-4-7-7-4z"/>',
+  printer:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+  trash:'<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/>',
+  alert:'<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5h.01"/>',
+  diamond:'<path d="M12 2.8 21.2 12 12 21.2 2.8 12z"/><path d="M12 8.5v4.5M12 15.8h.01"/>',
+  circle:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17h.01"/>',
+  lock:'<rect x="5" y="10" width="14" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  download:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  db:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+  logout:'<path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4M6 12h10"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  steth:'<path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v2a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="11" r="2"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  volume:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
+  backspace:'<path d="M21 5H9l-6 7 6 7h12z"/><path d="M12 9l6 6M18 9l-6 6"/>',
+  female:'<circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/>',
+  male:'<circle cx="10" cy="14" r="5.5"/><path d="M14 10l6-6M15 4h5v5"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  sparkle:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>'
+};
+function ic(name, cls){ return '<svg class="i'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(ICONS[name]||'')+'</svg>'; }
+var logoN = 0;
+function logo(size){
+  var id = 'lg' + (++logoN);
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 48 48" aria-hidden="true" style="flex:none;filter:drop-shadow(0 8px 18px rgba(14,159,149,.45))"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7FF0DE"/><stop offset=".5" stop-color="#0E9F95"/><stop offset="1" stop-color="#075F59"/></linearGradient></defs>' +
+    '<rect width="48" height="48" rx="15" fill="url(#'+id+')"/><path d="M7 26.5h8.5l3.2-7.5 5.3 14 4-10.5 2.3 4H41" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="37.5" cy="13" r="3.4" fill="#FFB673"/></svg>';
+}
+var LANG_NAME = {en:'English', hi:'हिंदी', mr:'मराठी', bn:'বাংলা'};
+var LEVELS = ['HIGH','MEDIUM','LOW','UNCERTAIN'];
+function lvlOf(l){ return LEVELS.indexOf(l) !== -1 ? l : 'UNCERTAIN'; }
+function sevClassForColor(c){ return /coral/.test(c) ? 'sev-red' : /amber/.test(c) ? 'sev-amber' : 'sev-green'; }
+function patientSub(){ return draft.age+' yrs &middot; '+esc(draft.sex)+' &middot; '+esc(draft.village); }
+
+function statusBar(){
+  var now = new Date();
+  return '<div class="sb no-print"><span>'+pad2(now.getHours())+':'+pad2(now.getMinutes())+'</span>' +
+    '<span class="sb-ic"><span class="sb-sig"><i></i><i></i><i></i><i></i></span><span class="sb-bat"><i></i></span></span></div>';
+}
+function pulseLine(){
+  var d = 'M0 26 H118 l6 -5 l6 5 h10 l7 10 l9 -30 l9 34 l7 -14 l5 5 H246 l6 -4 l6 4 H400';
+  return '<svg class="pulse" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true"><path class="base" d="'+d+'"/><path d="'+d+'"/></svg>';
+}
+function offlineChip(){
+  var on = CLOUD_ENABLED && fbUser && navigator.onLine;
+  return '<span class="chip'+(on?' ok':'')+'"><span class="led"></span>'+(on?'Online':'Offline')+'</span>';
+}
+function syncChip(){
+  var p = pendingCount();
+  if(S.syncedFlash) return '<button onclick="App.toggleSync()" class="chip ok"><span class="led"></span>Synced</button>';
+  if(CLOUD_ENABLED && fbUser){
+    if(p>0) return '<button onclick="App.toggleSync()" class="chip warn" aria-label="Sync '+p+' records now"><span class="led"></span>Sync '+p+'</button>';
+    return '<button onclick="App.toggleSync()" class="chip ok"><span class="led"></span>Cloud</button>';
+  }
+  if(p>0) return '<button onclick="App.toggleSync()" class="chip warn"><span class="led"></span>'+p+' pending</button>';
+  return '<button onclick="App.toggleSync()" class="chip"><span class="led"></span>Offline</button>';
+}
+function footerNote(){
+  return '<div class="disclaimer no-print">'+ic('info')+'This is not a diagnosis</div>';
+}
+function hero(o){
+  return '<header class="hero'+(o.cls?' '+o.cls:'')+'">' + statusBar() +
+    '<div class="bar">' +
+      (o.back ? '<button class="icon-btn glass" aria-label="Back" onclick="'+o.back+'">'+ic('back')+'</button>' : (o.lead||'')) +
+      '<div class="bar-t">'+(o.eyebrow?'<div class="h-eyebrow">'+o.eyebrow+'</div>':'')+'<div class="h-title'+(o.small?' sm':'')+'">'+o.title+'</div>'+(o.sub?'<div class="h-sub">'+o.sub+'</div>':'')+'</div>' +
+      (o.right||'') +
+    '</div>' + (o.extra||'') + pulseLine() +
+  '</header>';
+}
+function steps(active){
+  var names = ['Details','Symptoms','Check','Result'];
+  return '<div class="steps" aria-label="Step '+active+' of 4">' + names.map(function(n,i){
+    var st = i+1 < active ? 'done' : (i+1 === active ? 'now' : '');
+    return '<div class="st '+st+'"><i></i><span>'+n+'</span></div>';
+  }).join('') + '</div>';
+}
+function emptyState(title, text, icon){
+  return '<div class="empty"><span class="ib ink">'+ic(icon||'users')+'</span><b>'+title+'</b><span>'+text+'</span></div>';
+}
+
+// ---------- screens ----------
+function screenLogin(){
+  var isCreate = (S.pin === null);
+  var isChange = (pinMode === 'change');
+  var heading = isChange ? 'New PIN' : (isCreate ? L('createPin') : L('enterPin'));
+  var hint = isChange ? 'Enter a new 4-digit PIN' : (isCreate ? L('setPinHint') : 'Welcome back');
+  var dots = '';
+  for(var i=0;i<4;i++) dots += '<span class="pin-dot'+(i<pinBuf.length?' on':'')+'"></span>';
+  var keyHtml = ['1','2','3','4','5','6','7','8','9','C','0','B'].map(function(k){
+    if(k==='C') return '<button class="key key-fn" onclick="App.pinClear()">Clear</button>';
+    if(k==='B') return '<button class="key key-fn" onclick="App.pinBack()" aria-label="Delete last digit">'+ic('backspace')+'</button>';
+    return '<button class="key" onclick="App.pinDigit(\''+k+'\')">'+k+'</button>';
+  }).join('');
+  return '<header class="hero hero-tall">' + statusBar() +
+    '<div class="login-brand">'+logo(60)+'<div><div class="wordmark">'+L('appName')+'</div><div class="h-eyebrow" style="margin-top:6px">Voice triage &middot; ASHA</div></div></div>' +
+    '<div class="login-tag">Speak the symptoms.<br><em>Know who needs care first.</em></div>' +
+    '<div class="chip-row"><span class="chip ok"><span class="led"></span>Works offline</span><span class="chip"><span class="led"></span>4 languages</span><span class="chip"><span class="led"></span>Cloud sync</span></div>' +
+    pulseLine() +
+  '</header>' +
+  '<div class="sheet">' +
+    '<div class="worker-card"><span class="avatar ink">'+ic('user')+'</span><div class="wc-t"><div class="eyebrow">Worker ID</div><div class="wc-id">'+esc(S.worker.id)+'</div></div><span class="verified" title="Registered on this phone">'+ic('check')+'</span></div>' +
+    '<div class="pin-head"><div class="pin-title">'+heading+'</div><div class="pin-hint">'+hint+'</div></div>' +
+    '<div class="pin-dots'+(draft.pinError?' shake':'')+'" aria-label="'+pinBuf.length+' of 4 digits entered">'+dots+'</div>' +
+    (draft.pinError ? '<div class="pin-err" role="alert">'+esc(draft.pinError)+'</div>' : '') +
+    '<div class="keypad">'+keyHtml+'</div>' +
+    '<button onclick="App.doLogin()" '+(pinBuf.length<4?'disabled':'')+' class="btn btn-primary">'+L('signIn')+ic('arrow')+'</button>' +
+    (isChange ? '<button onclick="App.cancelChangePin()" class="btn btn-ghost">Cancel</button>' : '') +
+    (isCreate ? '<div class="fine">First use &middot; your PIN stays on this phone</div>' : '') +
+  '</div>';
+}
+
+function initials(p){
+  if(!p.name) return p.age+'y';
+  var w = String(p.name).trim().split(/\s+/);
+  return esc(((w[0]||'').charAt(0) + (w.length > 1 ? w[w.length-1].charAt(0) : '')).toUpperCase());
+}
+function recentRow(p){
+  var lvl = lvlOf(p.level);
+  var d = new Date(p.ts);
+  var day = (new Date().toDateString() === d.toDateString()) ? 'Today' : d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+  var nameStr = p.name ? esc(p.name) : (p.age+' yrs &middot; '+esc(p.sex));
+  var meta = (p.name ? p.age+'y &middot; '+esc(p.sex)+' &middot; ' : '') + day+' '+pad2(d.getHours())+':'+pad2(d.getMinutes()) + (p.village ? ' &middot; '+esc(p.village) : '');
+  var tags = (p.doctorNote ? '<span class="tag teal">'+ic('steth')+'DR NOTE</span>' : '') + (p.treated ? '<span class="tag ok">'+ic('check')+'TREATED</span>' : '');
+  return '<button class="prow sev-'+lvl+'" onclick="App.openHistoryItem(\''+p.id+'\')">' +
+    '<span class="avatar">'+(p.photo ? '<img src="'+p.photo+'" alt="">' : initials(p))+'</span>' +
+    '<span class="p-main"><span class="p-nm">'+nameStr+'</span><span class="p-mt">'+meta+'</span>'+(tags ? '<span class="p-tags">'+tags+'</span>' : '')+'</span>' +
+    '<span class="p-side"><span class="pill"><span class="d"></span>'+lvl+'</span><span class="sync-dot '+(p.synced?'ok':'wait')+'" title="'+(p.synced?'Synced to cloud':'Waiting to sync')+'"></span></span>' +
+  '</button>';
+}
+
+function greeting(){
+  var h = new Date().getHours();
+  if(h < 12) return 'Good morning';
+  if(h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+function kpi(val, label, tone){ return '<div class="kpi'+(tone?' '+tone:'')+'"><b>'+val+'</b><span>'+label+'</span></div>'; }
+function screenHome(){
+  var recents = S.patients.slice(0,5);
+  var d0 = new Date(); d0.setHours(0,0,0,0);
+  var urgent = S.patients.filter(function(p){ return p.ts >= d0.getTime() && p.level === 'HIGH'; }).length;
+  var pend = pendingCount();
+  return '<header class="hero">' + statusBar() +
+    '<div class="bar">'+logo(42)+'<div class="bar-t"><div class="h-title sm">'+L('appName')+'</div><div class="h-eyebrow">'+esc(S.worker.id)+' &middot; '+esc(S.worker.village)+'</div></div>'+syncChip()+'</div>' +
+    '<div class="greet"><div class="h-sub">'+greeting()+' &middot; '+new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+'</div>' +
+      '<div class="greet-h">Who are we<br><span>seeing today?</span></div></div>' +
+    '<div class="kpis">'+kpi(todayCount(), L('todayPts'))+kpi(pend, L('pendingSync'), pend?'warn':'')+kpi(urgent, 'Urgent today', urgent?'crit':'')+'</div>' +
+    pulseLine() +
+  '</header>' +
+  '<div class="body">' +
+    '<button class="cta" onclick="App.startNewPatient()">' +
+      '<span class="cta-orb">'+ic('mic')+'</span>' +
+      '<span class="cta-t"><span class="cta-h">'+L('newPatient')+'</span><span class="cta-s">Speak or type &middot; 2 min</span></span>' +
+      '<span class="cta-go">'+ic('arrow')+'</span>' +
+    '</button>' +
+    '<div class="sec"><span>Recent patients</span>'+(S.patients.length > 5 ? '<button class="link" onclick="App.tab(\'history\')">See all '+ic('chev')+'</button>' : '')+'</div>' +
+    '<div class="list">'+(recents.length ? recents.map(recentRow).join('') : emptyState('No patients yet','Tap New patient to start your first triage.','mic'))+'</div>' +
+  '</div>' +
+  bottomNav('home');
+}
+
+function bottomNav(active){
+  function item(name, label, icon){
+    var on = active === name;
+    return '<button class="'+(on?'on':'')+'" onclick="App.tab(\''+name+'\')"'+(on?' aria-current="page"':'')+'>'+ic(icon)+'<span>'+label+'</span></button>';
+  }
+  return '<nav class="dock no-print" aria-label="Main">'+item('home',L('home'),'home')+item('history',L('history'),'history')+item('settings',L('settings'),'settings')+'</nav>';
+}
+
+function histFiltered(){
+  var q = (S.histSearch || '').toLowerCase().trim();
+  if(!q) return S.patients;
+  return S.patients.filter(function(p){
+    return (p.name||'').toLowerCase().indexOf(q) !== -1 ||
+           (p.village||'').toLowerCase().indexOf(q) !== -1 ||
+           (p.sex||'').toLowerCase().indexOf(q) !== -1 ||
+           (p.level||'').toLowerCase().indexOf(q) !== -1 ||
+           String(p.age).indexOf(q) !== -1;
+  });
+}
+function histListHtml(){
+  var q = (S.histSearch || '').trim();
+  var list = histFiltered();
+  if(list.length) return list.map(recentRow).join('');
+  return q ? emptyState('No matches', 'No patient matches &ldquo;'+esc(q)+'&rdquo;.', 'search') : emptyState('Nothing recorded yet', 'Triaged patients will appear here.', 'history');
+}
+function screenHistory(){
+  var counts = {HIGH:0, MEDIUM:0, LOW:0, UNCERTAIN:0};
+  S.patients.forEach(function(p){ counts[lvlOf(p.level)]++; });
+  var sum = '<div class="sevsum">' + [['HIGH','High'],['MEDIUM','Medium'],['LOW','Low'],['UNCERTAIN','Unsure']].map(function(x){
+    return '<span class="ss sev-'+x[0]+'"><i></i>'+counts[x[0]]+' '+x[1]+'</span>';
+  }).join('') + '</div>';
+  return hero({title:L('history'), eyebrow:S.patients.length+(S.patients.length===1?' patient':' patients')+' &middot; this device', right:syncChip(),
+    extra:'<label class="search">'+ic('search')+'<input id="hist-q" oninput="App.setHistSearch(this.value)" value="'+esc(S.histSearch||'')+'" placeholder="'+L('searchPts')+'" aria-label="Search patients" autocomplete="off"><button id="hist-clear" type="button" onclick="App.clearHistSearch()" aria-label="Clear search"'+(S.histSearch?'':' hidden')+'>'+ic('x')+'</button></label>' + sum}) +
+  '<div class="body"><div class="list" id="hist-list">'+histListHtml()+'</div></div>' +
+  bottomNav('history');
+}
+
+function settingRow(icon, tone, label, value, btnLabel, action){
+  return '<div class="srow"><span class="ib'+(tone?' '+tone:'')+'">'+ic(icon)+'</span><div class="st-t"><div class="st-l">'+label+'</div>'+(value?'<div class="st-v">'+value+'</div>':'')+'</div>' +
+    (action ? '<button class="mini-btn" onclick="'+action+'">'+btnLabel+'</button>' : '') + '</div>';
+}
+function screenSettings(){
+  var on = CLOUD_ENABLED && fbUser;
+  var synced = S.patients.filter(function(p){ return p.synced; }).length;
+  var pct = S.patients.length ? Math.round(synced / S.patients.length * 100) : 100;
+  var cloudTag = on ? '<span class="status-tag on">CONNECTED</span>' : CLOUD_ENABLED ? '<span class="status-tag mid">CONFIGURED</span>' : '<span class="status-tag off">OFFLINE ONLY</span>';
+  var mono = esc(S.worker.id.replace(/[^A-Za-z]/g,'').slice(0,2) || 'AS');
+  return hero({title:L('settings'), eyebrow:'Device &amp; account', right:syncChip(),
+    extra:'<div class="profile"><span class="avatar ink">'+mono+'</span><div><div class="profile-id">'+esc(S.worker.id)+'</div><div class="h-sub">ASHA worker &middot; '+esc(S.worker.village)+'</div></div></div>'}) +
+  '<div class="body">' +
+    '<div class="card"><div class="eyebrow" style="margin-bottom:8px">Security</div>' +
+      settingRow('lock','ink','PIN lock', S.pin ? '4-digit PIN set' : 'Not set', 'Change', 'App.startChangePin()') + '</div>' +
+    '<div class="card"><div class="eyebrow" style="margin-bottom:8px">Language</div>' +
+      settingRow('globe','', S.lang==='hi' ? 'हिंदी' : 'English', 'App language', L('changeLang'), 'App.toggleLang()') +
+      settingRow('mic','', 'Speech input', (LANG_NAME[S.speechLang]||'English')+' &middot; change on the voice screen', '', '') + '</div>' +
+    '<div class="card cloud-card"><div class="card-h"><span class="ib ink">'+ic('cloud')+'</span><div style="flex:1"><div class="card-t">Google Firebase</div><div class="card-s">Auth &middot; Firestore &middot; Hosting</div></div>'+cloudTag+'</div>' +
+      settingRow('shield','ok','Firebase Auth', CLOUD_ENABLED ? (fbUser ? 'Anonymous UID '+esc(fbUser.uid.slice(0,10))+'&hellip;' : 'Not signed in') : 'Set FIREBASE_CONFIG in source', CLOUD_ENABLED && !fbUser ? 'Connect' : '', CLOUD_ENABLED && !fbUser ? 'App.cloudConnect()' : '') +
+      settingRow('sync','', 'Firestore sync', synced+' / '+S.patients.length+' records synced', 'Sync now', 'App.toggleSync()') +
+      '<div class="meterbar" role="img" aria-label="'+pct+'% synced"><i style="width:'+pct+'%"></i></div>' +
+    '</div>' +
+    '<div class="card"><div class="eyebrow" style="margin-bottom:8px">Data</div>' +
+      settingRow('download','', L('exportData'), S.patients.length+' patients on this device', 'JSON', 'App.exportData()') +
+      settingRow('note','', 'Spreadsheet', 'Opens in Excel or Google Sheets', 'CSV', 'App.exportCSV()') +
+      settingRow('db','', 'Storage', 'On this phone first, cloud when online', '', '') + '</div>' +
+    '<div class="card"><div class="card-h" style="margin-bottom:8px"><span class="ib sun">'+ic('sparkle')+'</span><div class="card-t">About Sahayak</div></div>' +
+      '<p class="card-s" style="font-size:13.5px;line-height:1.6;color:var(--text-2)">All triage runs on-device with a rule-based symptom checker. No patient data leaves the phone during triage.</p></div>' +
+    '<button onclick="App.signOut()" class="btn btn-danger">'+ic('logout')+'Sign out</button>' +
+  '</div>' +
+  bottomNav('settings');
+}
+
+function screenPatient(){
+  var bands = [[0,'0 &ndash; 1'],[3,'1 &ndash; 5'],[8,'5 &ndash; 12'],[15,'12+']];
+  var bandHtml = bands.map(function(b){ return '<button class="'+(draft.age===b[0]?'on':'')+'" onclick="App.ageBand('+b[0]+')">'+b[1]+'</button>'; }).join('');
+  var villageOpts = VILLAGES.map(function(v){ return '<option value="'+v+'" '+(draft.village===v?'selected':'')+'>'+v+'</option>'; }).join('');
+  var nameOk = (draft.name || '').trim().length > 0;
+  return hero({back:'App.backHome()', eyebrow:'New patient', title:'Patient details', sub:'Takes about two minutes', right:offlineChip(), extra:steps(1)}) +
+  '<div class="body">' +
+    '<div><div class="flabel">Patient name <small class="req">Required</small></div>' +
+      '<div id="name-wrap" class="field'+(nameOk?' is-ok':(draft.nameTouched?' is-err':''))+'">'+ic('user') +
+        '<input id="name-input" oninput="App.setName(this.value)" onblur="App.touchName()" value="'+esc(draft.name||'')+'" placeholder="Full name or initials" autocomplete="off" aria-required="true">' +
+        '<span id="name-check" class="ok-mark"'+(nameOk?'':' hidden')+'>'+ic('check')+'</span></div>' +
+      '<div id="name-error" class="ferr"'+(draft.nameTouched && !nameOk ? '' : ' hidden')+'>Name is required to continue</div></div>' +
+    '<div><div class="flabel">Age <small>Years</small></div>' +
+      '<div class="age"><button class="round" onclick="App.ageStep(-1)" aria-label="Decrease age">'+ic('minus')+'</button>' +
+        '<div class="age-val" aria-live="polite"><b>'+draft.age+'</b><span>years old</span></div>' +
+        '<button class="round plus" onclick="App.ageStep(1)" aria-label="Increase age">'+ic('plus')+'</button></div>' +
+      '<div class="bands">'+bandHtml+'</div></div>' +
+    '<div><div class="flabel">Sex</div><div class="sex">' +
+      '<button class="'+(draft.sex==='Female'?'on':'')+'" aria-pressed="'+(draft.sex==='Female')+'" onclick="App.setSex(\'Female\')">'+ic('female')+'Female</button>' +
+      '<button class="'+(draft.sex==='Male'?'on':'')+'" aria-pressed="'+(draft.sex==='Male')+'" onclick="App.setSex(\'Male\')">'+ic('male')+'Male</button></div></div>' +
+    '<div><div class="flabel">Village</div><div class="select-card"><span class="ib">'+ic('pin')+'</span>' +
+      '<span class="sv"><b>'+esc(draft.village)+'</b><span>Pre-loaded &middot; '+VILLAGES.length+' villages</span></span>'+ic('chev','rot') +
+      '<select onchange="App.setVillage(this.value)" aria-label="Village">'+villageOpts+'</select></div></div>' +
+    '<div id="gps-row" class="inline'+(draft.gps?' good':'')+'"><span class="ib'+(draft.gps?' ok':'')+'">'+ic('pin')+'</span>' +
+      '<span class="it">'+L('gpsLbl')+'<small>'+(draft.gps ? 'Captured &middot; &plusmn;'+Math.round(draft.gps.acc)+' m' : 'Helps the PHC find the house')+'</small></span>' +
+      (draft.gps ? '<span class="tag ok">'+ic('check')+'SAVED</span>' : '<button class="mini-btn" onclick="App.getGPS()">Get GPS</button>') + '</div>' +
+    '<label class="photo"><input type="file" accept="image/*" capture="environment" onchange="App.capturePhoto(this)" style="display:none">' +
+      '<span class="ph">'+(draft.photo ? '<img src="'+draft.photo+'" alt="Patient photo">' : ic('camera'))+'</span>' +
+      '<span class="it">'+L('addPhoto')+'<small>'+(draft.photo ? 'Photo captured &middot; tap to retake' : 'Optional &middot; opens the camera')+'</small></span></label>' +
+    '<div><div class="flabel">Vitals <small>Optional</small></div>' +
+      '<div class="vitals">'+vitalInput('temp','Temp','&deg;C or &deg;F','decimal','thermo')+vitalInput('pulse','Pulse','beats/min','numeric','heart')+vitalInput('spo2','SpO&#8322;','percent','numeric','drop')+'</div>' +
+      '<div id="vitals-hint" class="vhint" aria-live="polite">'+vitalsHintHtml()+'</div></div>' +
+    '<div><div class="flabel">'+L('notes')+'</div><textarea class="ta" oninput="App.setNotes(this.value)" placeholder="Any observations or context&hellip;">'+esc(draft.notes||'')+'</textarea></div>' +
+  '</div>' +
+  '<div class="foot"><button id="continue-btn" onclick="App.toContinuePatient()" '+(nameOk?'':'disabled')+' class="btn btn-primary">Continue'+ic('arrow')+'</button></div>';
+}
+
+function screenVoiceReady(){
+  var T = TYPE_UI[S.speechLang] || TYPE_UI.en;
+  return hero({back:'App.backHome()', eyebrow:'Symptoms', title:esc(draft.name || 'Patient'), sub:patientSub(), right:offlineChip(), extra:steps(2)}) +
+  '<div class="body">' +
+    '<div class="prompt"><b>Describe the symptoms</b><button class="play" onclick="App.playPrompt()" aria-label="Play the question aloud">'+ic('play')+'</button></div>' +
+    '<div class="stagebox">' +
+      '<button class="orb" onclick="App.startRecording()" aria-label="'+L('pressSpeak')+'">'+ic('mic')+'</button>' +
+      '<div class="orb-l"><b>'+L('pressSpeak')+'</b><span>Speaking in '+(LANG_NAME[S.speechLang]||'English')+'</span></div>' +
+      langPicker() +
+      '<button class="type-btn" onclick="App.startTyping()">'+ic('keyboard')+T.btn+'</button>' +
+    '</div>' +
+    (draft.retryHint ? '<div class="note warn">'+ic('alert')+'<span>Didn&rsquo;t catch that &mdash; press and speak again</span></div>' : '') +
+    (speechSupported()
+      ? '<div class="note teal">'+ic('shield')+'<span>This browser transcribes speech on the fly &mdash; nothing else leaves the phone</span></div>'
+      : '<div class="note teal">'+ic('shield')+'<span>No internet needed &mdash; audio stays on this phone</span></div>') +
+    '<div class="fine">'+(speechSupported() ? 'Live speech-to-text &middot; EN / HI / MR / BN' : 'Demo mode &middot; this browser can&rsquo;t transcribe speech')+'</div>' +
+  '</div>';
+}
+
+// ---------- typed symptoms (English, Hindi, Marathi, Bengali) ----------
+var TYPE_UI = {
+  en:{btn:'Type the symptoms instead', title:'Type the symptoms', ph:'Write what the patient says, for example: fever for two days and vomiting', cont:'Continue', quick:'TAP TO ADD', hint:'Write in English, or tap the words below'},
+  hi:{btn:'लक्षण टाइप करें', title:'लक्षण लिखें', ph:'मरीज़ क्या बता रहा है, यहाँ लिखें…', cont:'आगे बढ़ें', quick:'जोड़ने के लिए दबाएं', hint:'हिंदी में लिखें या नीचे के शब्द दबाएं'},
+  mr:{btn:'लक्षणे टाइप करा', title:'लक्षणे लिहा', ph:'रुग्ण काय सांगत आहे ते येथे लिहा…', cont:'पुढे', quick:'जोडण्यासाठी दाबा', hint:'मराठीत लिहा किंवा खालील शब्द दाबा'},
+  bn:{btn:'লক্ষণ টাইপ করুন', title:'লক্ষণ লিখুন', ph:'রোগী কী বলছে তা এখানে লিখুন…', cont:'এগিয়ে যান', quick:'যোগ করতে ট্যাপ করুন', hint:'বাংলায় লিখুন বা নিচের শব্দে ট্যাপ করুন'}
+};
+// Every phrase below must match a FLAGS keyword in its own language; order = severity (3 red, 5 amber, 3 green).
+var QUICK_SEV = ['red','red','red','amber','amber','amber','amber','amber','green','green','green'];
+var QUICK = {
+  en:['Chest pain','Trouble breathing','Unconscious','Fever','Vomiting','Pain in the stomach','Loose motions','Weak','Cough','Headache','Body ache'],
+  hi:['सीने में दर्द','सांस लेने में तकलीफ','बेहोश','बुखार','उल्टी','पेट दर्द','दस्त','कमजोरी','खांसी','सिरदर्द','बदन दर्द'],
+  mr:['छातीत दुखणे','श्वास घेण्यास त्रास','बेशुद्ध','ताप','उलट्या','पोट दुखणे','जुलाब','अशक्तपणा','खोकला','डोकेदुखी','अंगदुखी'],
+  bn:['বুকে ব্যথা','শ্বাসকষ্ট','অজ্ঞান','জ্বর','বমি','পেটে ব্যথা','পাতলা পায়খানা','দুর্বলতা','কাশি','মাথাব্যথা','গায়ে ব্যথা']
+};
+function langPicker(){
+  var langs = [['en','English'],['hi','हिंदी'],['mr','मराठी'],['bn','বাংলা']];
+  return '<div class="seg" role="group" aria-label="Language">' + langs.map(function(l){
+    var on = S.speechLang === l[0];
+    return '<button onclick="App.setSpeechLang(\''+l[0]+'\')" aria-pressed="'+on+'" lang="'+l[0]+'">'+l[1]+'</button>';
+  }).join('') + '</div>';
+}
+function wordPills(text, max){
+  var seen = {}, out = [];
+  scan(text).forEach(function(m){
+    if(seen[m.w]) return;
+    seen[m.w] = 1;
+    out.push('<span class="pill word sev-'+m.b+'"><span class="d"></span>'+esc(m.w)+'</span>');
+  });
+  return out.slice(0, max || 8).join('');
+}
+function liveDetectHtml(text){
+  var t = String(text || '').trim();
+  if(!t) return '<span class="eyebrow">Detected symptoms appear here as you type</span>';
+  var pills = wordPills(t, 6);
+  if(!pills) return '<span class="eyebrow">No known symptom words yet</span>';
+  var lvl = classify(t).level;
+  return '<span class="eyebrow">Detected</span>' + pills + '<span class="pill sev-'+lvl+'" style="margin-left:auto"><span class="d"></span>'+lvl+'</span>';
+}
+function screenTypeSymptoms(){
+  var T = TYPE_UI[S.speechLang] || TYPE_UI.en;
+  var Q = QUICK[S.speechLang] || QUICK.en;
+  var ok = (draft.typedText || '').trim().length > 0;
+  var chips = Q.map(function(ph, i){
+    return '<button class="sev-'+QUICK_SEV[i]+'" onclick="App.addQuick('+i+')"><span class="d"></span>'+esc(ph)+'</button>';
+  }).join('');
+  return hero({back:'App.backToVoice()', eyebrow:'Symptoms', title:T.title, sub:patientSub(), right:offlineChip(), extra:steps(2)}) +
+  '<div class="body">' +
+    langPicker() +
+    '<div><textarea id="sym-text" lang="'+S.speechLang+'" oninput="App.setSymptomText(this)" maxlength="500" placeholder="'+esc(T.ph)+'" aria-label="'+esc(T.title)+'">'+esc(draft.typedText || '')+'</textarea>' +
+      '<div id="sym-live" class="live" aria-live="polite">'+liveDetectHtml(draft.typedText)+'</div></div>' +
+    '<div><div class="sec" style="margin-bottom:10px"><span lang="'+S.speechLang+'">'+T.quick+'</span></div><div class="quick">'+chips+'</div></div>' +
+    '<div class="note plain">'+ic('info')+'<span>'+T.hint+'</span></div>' +
+  '</div>' +
+  '<div class="foot"><button id="type-continue" onclick="App.submitTyped()" '+(ok?'':'disabled')+' class="btn btn-primary">'+T.cont+ic('arrow')+'</button></div>';
+}
+function syncTypeContinue(){
+  var b = document.getElementById('type-continue');
+  if(b) b.disabled = !((draft.typedText || '').trim().length > 0);
+}
+
+function screenRecording(){
+  var bars = '';
+  for(var i=0;i<19;i++) bars += '<span class="wv-bar"></span>';
+  return '<div class="immersive">' + statusBar() +
+    '<div class="rec-top"><span class="rec-live"><i></i>REC</span><span id="rec-timer">0:00</span></div>' +
+    '<div class="rec-q"><span>'+(LANG_NAME[S.speechLang]||'English')+' &middot; '+L('listening')+'</span>Describe the symptoms</div>' +
+    '<div class="rec-core">' +
+      '<div class="rec-orb">'+ic('mic')+'</div>' +
+      '<div id="wave">'+bars+'</div>' +
+      '<div id="live-caption">'+(speechSupported() ? 'Listening&hellip;' : 'Demo mode &middot; speak, then press stop')+'</div>' +
+      '<div id="quiet-hint">'+ic('volume')+'Speak a little louder</div>' +
+    '</div>' +
+    '<div class="rec-foot"><button onclick="App.stopRecording()" class="btn btn-stop"><span class="sq"></span>Stop &amp; review</button></div>' +
+  '</div>';
+}
+
+function screenConfirm(){
+  var c = draft.pending;
+  var head = hero({eyebrow:'Check', title:'This is what was heard', sub:patientSub(), right:offlineChip(), extra:steps(3)});
+  if(!c.low){
+    var picked = wordPills(c.t, 8);
+    return head + '<div class="body">' +
+      '<div class="banner ok"><span class="ib">'+ic('check')+'</span><div style="flex:1"><b>Audio was clear</b><span>Check the words, then continue</span></div>'+(c.source==='demo'?'<span class="tag teal">DEMO</span>':'')+'</div>' +
+      '<div class="heard"><p>'+esc(c.t)+'</p>' +
+        (picked ? '<div class="detected" style="margin-top:14px"><span class="eyebrow" style="margin-right:4px">Picked up</span>'+picked+'</div>' : '') +
+        '<div class="heard-foot"><button class="play" onclick="App.playPending()" aria-label="Listen back">'+ic('play')+'</button><span>Tap to listen back</span></div></div>' +
+    '</div>' +
+    '<div class="foot foot-stack"><button onclick="App.confirmCorrect()" class="btn btn-primary">Correct, continue'+ic('arrow')+'</button><button onclick="App.confirmRepeat()" class="btn btn-soft">'+ic('mic')+'Repeat</button></div>';
+  }
+  return head + '<div class="body">' +
+    '<div class="banner warn"><span class="ib">'+ic('help')+'</span><div style="flex:1"><b>Audio was not clear</b><span>'+c.maskedCount+' words were not heard clearly</span></div>'+(c.source==='demo'?'<span class="tag" style="background:rgba(255,255,255,.55)">DEMO</span>':'')+'</div>' +
+    '<div class="heard unclear"><p>'+c.maskedHtml+'</p></div>' +
+    '<div class="note warn">'+ic('info')+'<span>Noise or distance is likely. Recording again usually fixes it.</span></div>' +
+  '</div>' +
+  '<div class="foot foot-stack"><button onclick="App.confirmRepeat()" class="btn btn-primary"><span class="bt">Record again<span class="sub">Recommended</span></span>'+ic('mic')+'</button><button onclick="App.confirmContinueAnyway()" class="btn btn-ghost">Continue anyway</button></div>';
+}
+
+function screenProcessing(){
+  return hero({eyebrow:'Check', title:'Checking on this phone', sub:'No internet needed for this step', right:offlineChip(), extra:steps(3)}) +
+  '<div class="proc">' +
+    '<div class="ring"><svg viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="ringgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5FE3D0"/><stop offset="1" stop-color="#0A7F77"/></linearGradient></defs>' +
+      '<circle class="track" cx="60" cy="60" r="52"/><circle class="prog" cx="60" cy="60" r="52"/></svg>' +
+      '<div class="ring-c"><b id="proc-pct">0%</b><span>Analysing</span></div></div>' +
+    '<div class="steps-v">' +
+      '<div id="proc1" class="pstep done"><span class="pi">'+ic('check')+'</span><b>Words read</b></div>' +
+      '<div id="proc2" class="pstep active"><span class="pi">'+ic('check')+'</span><b>Symptoms found</b><span id="proc2-count" class="cnt"></span></div>' +
+      '<div id="proc3" class="pstep"><span class="pi">'+ic('check')+'</span><b>Setting urgency</b></div>' +
+    '</div>' +
+  '</div>';
+}
+
+var VERDICT = {HIGH:{icon:'alert', idx:2}, MEDIUM:{icon:'diamond', idx:1}, LOW:{icon:'circle', idx:0}, UNCERTAIN:{icon:'help', idx:-1}};
+var QUEUE_SCRIPT = 'I am asking the doctor. Please wait here. If breathing gets heavy or you feel faint, tell me at once.';
+function meterRow(idx){
+  var hi = S.lang === 'hi';
+  var items = [[hi?'घर':'Home','home2'],[hi?'आज':'Today','calendar'],[hi?'अभी':'Now','bolt']];
+  return '<div class="meter" role="img" aria-label="Urgency scale">' + items.map(function(it, i){
+    return '<div class="'+(i===idx?'on':'')+'">'+ic(it[1])+it[0]+'</div>';
+  }).join('') + '</div>';
+}
+function callBtn(label, phone){
+  return '<a class="call" href="tel:'+phone+'"><span class="lead">'+ic('phone')+'</span><span><b>'+label+'</b><span>'+phone+'</span></span><span class="go">'+ic('arrow')+'</span></a>';
+}
+function screenResult(){
+  var r = draft.result;
+  var readOnly = !!draft.viewOnly;
+  var hi = S.lang === 'hi';
+  var lvl = lvlOf(r.level);
+  var sub = (r.name ? esc(r.name)+' &middot; ' : '')+r.age+' yrs &middot; '+esc(r.sex)+' &middot; '+esc(r.village);
+  var chip = r.synced ? '<span class="chip ok"><span class="led"></span>Synced</span>' : (pendingCount()>0 ? '<span class="chip warn"><span class="led"></span>'+pendingCount()+' pending</span>' : offlineChip());
+  var T = {
+    HIGH:{title:hi?'तुरंत रेफर करें':'Refer immediately', sub:hi?'नज़दीकी PHC &middot; अभी':'Nearest PHC &middot; now', ruled:''},
+    MEDIUM:{title:hi?'आज समीक्षा करें':'Same-day review', sub:hi?'शाम तक sub-centre जाएं':'Sub-centre by this evening', ruled:hi?'सांस या सीने की तकलीफ नहीं पाई गई':'No breathing or chest trouble found'},
+    LOW:{title:hi?'घर पर देखभाल':'Home care advice', sub:hi?'तीन दिन बाद दोबारा जांचें':'Check back in three days', ruled:hi?'बुखार या दर्द बढ़े तो दोबारा दिखाएं':'Check again if fever starts or pain increases'},
+    UNCERTAIN:{title:hi?'अनिश्चित':'Not confident', sub:hi?'डॉक्टर से मिलें':'Please consult a person', ruled:''}
+  }[lvl];
+  var head = '<header class="verdict sev-'+lvl+'">' + statusBar() +
+    '<div class="bar"><button class="icon-btn glass" aria-label="Back" onclick="'+(readOnly?'App.backTo(\'history\')':'App.backHome()')+'">'+ic('back')+'</button>' +
+      '<div class="bar-t"><div class="h-eyebrow">'+(readOnly?'Patient record':'Triage result')+'</div><div class="h-sub">'+sub+'</div></div>'+chip+'</div>' +
+    '<div class="v-main"><div class="medal">'+ic(VERDICT[lvl].icon)+'</div><div><div class="v-title">'+T.title+'</div><div class="v-sub">'+T.sub+'</div></div></div>' +
+    (lvl === 'UNCERTAIN' ? '<div class="meter"><div class="on">'+ic('help')+(hi?'कोई स्तर नहीं मिला':'Did not fit any level')+'</div></div>' : meterRow(VERDICT[lvl].idx)) +
+  '</header>';
+
+  var main;
+  if(lvl === 'UNCERTAIN'){
+    main = '<div class="card"><div class="card-h"><span class="ib unk">'+ic('help')+'</span><div class="card-t">'+(hi?'ऐप निर्णय नहीं कर सका':'The app could not decide')+'</div></div>' +
+      '<p class="card-s" style="font-size:14.5px;line-height:1.6;color:var(--text-2)">'+(hi?'यह गलती नहीं है — ऐसे मामले किसी व्यक्ति को दिखाने चाहिए।':'This is not an error — cases like this should be seen by a person.')+'</p></div>' +
+      '<div class="note unk">'+ic('users')+'<span><b>'+(hi?'तब तक मरीज़ को अपने पास रखें':'Meanwhile, keep the patient with you')+'</b></span></div>';
+  } else {
+    var tone = {HIGH:'crit', MEDIUM:'warn', LOW:'ok'}[lvl];
+    main = '<div class="card"><div class="card-h"><span class="ib '+tone+'">'+ic('sparkle')+'</span><div><div class="card-t">Why this result?</div><div class="card-s">Signs picked up from the description</div></div></div>' +
+      '<div class="why">' + (r.reasons && r.reasons.length ? r.reasons.map(function(x){
+        return '<div class="why-r '+sevClassForColor(x.color)+'"><span class="d"></span><b>'+esc(cap(x.phrase))+'</b></div>';
+      }).join('') : '<div class="card-s">Based on what was heard.</div>') + '</div>' +
+      (T.ruled ? '<div class="ruled">'+ic('check')+'<span>'+T.ruled+'</span></div>' : '') + '</div>';
+  }
+
+  var actions = '';
+  if(!readOnly){
+    if(lvl === 'HIGH'){
+      actions = callBtn(hi?'PHC को कॉल करें':'Call the PHC now', PHC_PHONE) +
+        '<button onclick="App.showSlip()" class="btn btn-dark">'+ic('note')+L('referralSlip')+'</button>';
+    } else if(lvl === 'MEDIUM'){
+      actions = '<button onclick="App.finishCase()" class="btn btn-primary btn-xl"><span class="lead">'+ic('calendar')+'</span><span class="bt">'+(hi?'आज स्लॉट बुक करें':'Book a slot today')+'<span class="sub">4 PM &middot; Sub-centre</span></span><span class="go">'+ic('arrow')+'</span></button>' +
+        '<button onclick="App.playAdvice()" class="btn btn-soft">'+ic('volume')+(hi?'सलाह सुनें':'Play advice')+'</button>';
+    } else if(lvl === 'LOW'){
+      actions = '<button onclick="App.playAdvice()" class="btn btn-primary btn-xl"><span class="lead">'+ic('volume')+'</span><span class="bt">'+(hi?'सलाह सुनें':'Play advice')+'<span class="sub">Read aloud &middot; 40 sec</span></span><span class="go">'+ic('play')+'</span></button>' +
+        '<button onclick="App.finishCase()" class="btn btn-soft">'+ic('check')+L('finish')+'</button>';
+    } else {
+      actions = callBtn(hi?'डॉक्टर से बात करें':'Talk to the doctor', PHC_PHONE) +
+        '<button onclick="App.sendForReview()" class="btn btn-dark">'+ic('send')+(hi?'समीक्षा के लिए भेजें':'Send for review')+'</button>' +
+        '<button onclick="App.recordAgainFromUncertain()" class="btn btn-ghost">'+ic('mic')+(hi?'फिर से रिकॉर्ड करें':'Record again')+'</button>';
+    }
+  }
+  var treated = '<button class="switch-row'+(r.treated?' on':'')+'" role="switch" aria-checked="'+(!!r.treated)+'" onclick="App.toggleTreated(\''+r.id+'\')">' +
+    '<span class="ib'+(r.treated?' ok':'')+'">'+ic('check')+'</span><b>'+(r.treated?'Patient treated':'Mark as treated')+'</b><span class="switch"></span></button>';
+
+  return head + '<div class="body">' + main + vitalsCard(r) + doctorNoteCard(r) + actions + treated +
+    (readOnly ? '<button onclick="App.backTo(\'history\')" class="btn btn-ghost">'+L('close')+'</button><button onclick="App.confirmDelete(\''+r.id+'\')" class="btn btn-danger">'+ic('trash')+'Delete record</button>' : '') +
+  '</div>' + footerNote();
+}
+
+function screenQueued(){
+  return '<header class="verdict sev-LOW">' + statusBar() +
+    '<div class="bar"><div class="bar-t"><div class="h-eyebrow">Sent for review</div></div><span class="chip warn"><span class="led"></span>'+pendingCount()+' pending</span></div>' +
+    '<div class="v-main"><div class="medal">'+ic('check')+'</div><div><div class="v-title">Queued</div><div class="v-sub">Stored on this phone &middot; nothing lost</div></div></div>' +
+  '</header>' +
+  '<div class="body">' +
+    '<div class="card"><div class="card-h"><span class="ib">'+ic('sync')+'</span><div class="card-t">What happens next</div></div><div class="timeline">' +
+      ['It sends by itself when the network returns','A PHC doctor reviews it and calls you','The reply appears with this patient'].map(function(s, i){
+        return '<div class="tl"><i>'+(i+1)+'</i><b>'+s+'</b></div>';
+      }).join('') + '</div></div>' +
+    '<div class="card"><div class="card-h"><span class="ib sun">'+ic('volume')+'</span><div class="card-t">What to tell the patient</div></div>' +
+      '<p class="quote">&ldquo;'+QUEUE_SCRIPT+'&rdquo;</p>' +
+      '<div class="heard-foot"><button class="play" onclick="App.playScript()" aria-label="Play aloud for the patient">'+ic('play')+'</button><span>Play aloud for the patient</span></div></div>' +
+    '<a class="call" href="tel:'+PHC_PHONE+'"><span class="lead">'+ic('phone')+'</span><span><b>Call the doctor now</b><span>Don&rsquo;t wait for sync</span></span><span class="go">'+ic('arrow')+'</span></a>' +
+    '<button onclick="App.backHome()" class="btn btn-ghost">'+ic('home')+'Back to home</button>' +
+  '</div>' + footerNote();
+}
+
+function screenSlip(){
+  var r = draft.result;
+  if(!r) return '<div style="padding:24px">No record loaded.</div>';
+  var lvl = lvlOf(r.level);
+  var dt = new Date(r.ts);
+  var dateStr = dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  var timeStr = pad2(dt.getHours())+':'+pad2(dt.getMinutes());
+  var reasonTxt = r.reasons && r.reasons.length ? r.reasons.map(function(x){ return cap(x.phrase); }).join(', ') : 'n/a';
+  function sect(label, html){ return '<div><div class="eyebrow" style="margin-bottom:6px">'+label+'</div>'+html+'</div>'; }
+  return hero({back:'App.backResult()', eyebrow:'Referral', title:L('referralSlip'), sub:'Show this at the PHC', cls:'no-print'}) +
+  '<div class="body">' +
+    '<div id="slip-content" class="slip">' +
+      '<div class="slip-top">'+logo(36)+'<div class="st-t"><b>SAHAYAK REFERRAL SLIP</b><span>COMMUNITY HEALTH WORKER &middot; ASHA</span></div><div class="slip-no">No. '+esc(String(r.id).replace(/^p/,'').slice(-6))+'<br>'+dateStr+'</div></div>' +
+      '<div class="slip-sev sev-'+lvl+'"><div class="medal">'+ic(VERDICT[lvl].icon)+'</div><div><b>URGENCY: '+lvl+'</b><span>'+esc(reasonTxt)+'</span></div></div>' +
+      '<div class="slip-body">' +
+        '<div class="kv">' +
+          '<div><div class="k">Worker ID</div><div class="v">'+esc(S.worker.id)+'</div></div>' +
+          '<div><div class="k">Village</div><div class="v">'+esc(r.village)+'</div></div>' +
+          '<div><div class="k">Patient</div><div class="v">'+(r.name ? esc(r.name)+' &middot; ' : '')+r.age+' yrs &middot; '+esc(r.sex)+'</div></div>' +
+          '<div><div class="k">Date &amp; time</div><div class="v">'+dateStr+' '+timeStr+'</div></div>' +
+        '</div>' +
+        (r.vitals ? sect('Vitals', '<div class="box mono">'+esc(vitalsText(r.vitals))+'</div>') : '') +
+        (r.transcript ? sect('Symptoms reported', '<p class="box">'+esc(r.transcript)+'</p>') : '') +
+        (r.notes ? sect('CHW notes', '<p class="box">'+esc(r.notes)+'</p>') : '') +
+        (r.gps ? sect('GPS', '<div class="box mono">'+r.gps.lat.toFixed(5)+', '+r.gps.lng.toFixed(5)+' (&plusmn;'+Math.round(r.gps.acc)+' m)</div>') : '') +
+        (r.treated ? '<div class="note teal">'+ic('check')+'<span>Marked as treated</span></div>' : '') +
+        (r.photo ? '<img src="'+r.photo+'" alt="Patient photo" style="width:100%;border-radius:14px;max-height:200px;object-fit:cover">' : '') +
+        '<div class="slip-fine">This is not a diagnosis. Refer to qualified medical personnel for treatment decisions.</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="no-print" style="display:flex;flex-direction:column;gap:10px">' +
+      '<button onclick="App.shareWhatsApp()" class="btn btn-wa">'+ic('send')+'Share on WhatsApp</button>' +
+      '<button onclick="window.print()" class="btn btn-soft">'+ic('printer')+L('print')+'</button>' +
+    '</div>' +
+  '</div>';
+}
+
+var SCREENS = {
+  login: screenLogin, home: screenHome, history: screenHistory, settings: screenSettings,
+  patient: screenPatient, voiceReady: screenVoiceReady, recording: screenRecording,
+  confirm: screenConfirm, processing: screenProcessing, result: screenResult, queued: screenQueued,
+  slip: screenSlip, typeSymptoms: screenTypeSymptoms
+};
+
+function render(){
+  var sc = document.getElementById('screen');
+  sc.innerHTML = SCREENS[screen] ? SCREENS[screen]() : '';
+  sc.classList.toggle('enter', !!render.entering);
+  render.entering = false;
+  afterRender();
+}
+function safeRender(){
+  var a = document.activeElement;
+  if(a && (a.tagName==='INPUT' || a.tagName==='TEXTAREA')) return;
+  render();
+}
+
+function afterRender(){
+  if(screen === 'recording') setupRecording();
+  if(screen === 'processing') setupProcessing();
+  if(screen === 'typeSymptoms'){
+    var t = document.getElementById('sym-text');
+    if(t){ t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+  }
+}
+
+function setupRecording(){
+  var start = Date.now();
+  var timerEl = document.getElementById('rec-timer');
+  var bars = Array.prototype.slice.call(document.querySelectorAll('#wave .wv-bar'));
+  var hintEl = document.getElementById('quiet-hint');
+  var captionEl = document.getElementById('live-caption');
+  recCtx = {
+    timer:null, raf:null, stream:null, audioCtx:null, quietSince:null,
+    recognition:null, finalTranscript:'', confSum:0, confCount:0, recognitionFatal:null
+  };
+  var myCtx = recCtx; // async callbacks below must bail out once this recording screen is gone
+
+  recCtx.timer = setInterval(function(){
+    var s = Math.floor((Date.now()-start)/1000);
+    if(timerEl) timerEl.textContent = Math.floor(s/60)+':'+pad2(s%60);
+  }, 1000);
+
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(SR){
+    var rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = {en:'en-IN', hi:'hi-IN', mr:'mr-IN', bn:'bn-IN'}[S.speechLang] || 'en-IN';
+    rec.maxAlternatives = 3;
+    rec.onresult = function(e){
+      var interim = '';
+      for(var i=e.resultIndex; i<e.results.length; i++){
+        var alt = e.results[i].isFinal ? bestAlternative(e.results[i]) : e.results[i][0];
+        if(e.results[i].isFinal){
+          recCtx.finalTranscript = (recCtx.finalTranscript + ' ' + alt.transcript).trim();
+          if(typeof alt.confidence === 'number' && alt.confidence > 0){
+            recCtx.confSum += alt.confidence; recCtx.confCount++;
+          }
+        } else {
+          interim += alt.transcript;
+        }
+      }
+      if(captionEl) captionEl.textContent = (recCtx.finalTranscript + ' ' + interim).trim() || 'Listening…';
+    };
+    rec.onerror = function(e){
+      recCtx.recognitionFatal = e.error;
+      if(captionEl && (e.error === 'not-allowed' || e.error === 'service-not-allowed')){
+        captionEl.textContent = 'Microphone permission needed for live transcription';
+      }
+    };
+    rec.onend = function(){
+      // Some engines end after a silence gap even in continuous mode; restart
+      // unless we've genuinely left this screen (cleanupRecording nulls recCtx).
+      if(recCtx && recCtx.recognition === rec && !recCtx.recognitionFatal){
+        try{ rec.start(); }catch(e){}
+      }
+    };
+    try{
+      rec.start();
+      recCtx.recognition = rec;
+    }catch(e){
+      recCtx.recognitionFatal = 'start-failed';
+    }
+  }
+
+  function fallbackAnimate(){
+    var t = 0;
+    function tick(){
+      if(recCtx !== myCtx) return;
+      t += 0.12;
+      bars.forEach(function(b, i){
+        var h = 8 + Math.abs(Math.sin(t + i*0.5)) * 90;
+        b.style.height = h + 'px';
+      });
+      recCtx.raf = requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.AudioContext){
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      if(recCtx !== myCtx){ stream.getTracks().forEach(function(t){ t.stop(); }); return; } // left the screen before permission resolved: release the mic
+      recCtx.stream = stream;
+      var AC = window.AudioContext || window.webkitAudioContext;
+      recCtx.audioCtx = new AC();
+      var src = recCtx.audioCtx.createMediaStreamSource(stream);
+      var analyser = recCtx.audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      src.connect(analyser);
+      var data = new Uint8Array(analyser.frequencyBinCount);
+      function tick(){
+        if(recCtx !== myCtx) return;
+        analyser.getByteFrequencyData(data);
+        var avg = data.reduce(function(a,b){return a+b;},0) / data.length;
+        bars.forEach(function(b, i){
+          var v = data[i % data.length] || 0;
+          b.style.height = Math.max(8, (v/255)*98) + 'px';
+        });
+        if(avg < 10){
+          if(!recCtx.quietSince) recCtx.quietSince = Date.now();
+          if(Date.now() - recCtx.quietSince > 1500 && hintEl) hintEl.style.opacity = '1';
+        } else {
+          recCtx.quietSince = null;
+          if(hintEl) hintEl.style.opacity = '0';
+        }
+        recCtx.raf = requestAnimationFrame(tick);
+      }
+      tick();
+    }).catch(function(){
+      if(recCtx === myCtx) fallbackAnimate();
+    });
+  } else {
+    fallbackAnimate();
+  }
+}
+
+function setupProcessing(){
+  var p2 = document.getElementById('proc2'), p2c = document.getElementById('proc2-count'), p3 = document.getElementById('proc3'), pct = document.getElementById('proc-pct');
+  var c = classify(draft.finalText || '');
+  var shown = c.symptomCount + vitalFlags(parseVitals(draft), draft.age).length;
+  for(var i = 1; i <= 19; i++){
+    (function(i){ procTimers.push(setTimeout(function(){ if(pct) pct.textContent = Math.round((1 - Math.pow(1 - i/19, 3)) * 100) + '%'; }, i * 100)); })(i);
+  }
+  procTimers.push(setTimeout(function(){
+    if(p2c) p2c.textContent = shown;
+    if(p2) p2.className = 'pstep done';
+    if(p3) p3.className = 'pstep active';
+  }, 650));
+  procTimers.push(setTimeout(function(){ if(p3) p3.className = 'pstep done'; }, 1450));
+  procTimers.push(setTimeout(function(){ App.finishProcessing(); }, 2000));
+}
+
+// ---------- App actions ----------
+window.App = {
+  pinDigit: function(d){ if(pinBuf.length<4){ pinBuf += d; draft.pinError=''; render(); } },
+  pinClear: function(){ pinBuf = ''; draft.pinError=''; render(); },
+  pinBack: function(){ if(pinBuf.length>0){ pinBuf=pinBuf.slice(0,-1); render(); } },
+  doLogin: function(){
+    if(pinBuf.length<4) return;
+    if(pinMode==='change'){
+      S.pin = pinBuf; save(); pinBuf=''; pinMode='login';
+      draft.pinError=''; draft.flashMsg = L('pinChanged');
+      navigate('settings'); return;
+    }
+    if(S.pin===null){
+      // First time — create the PIN
+      S.pin = pinBuf; S.loggedIn=true; save(); pinBuf='';
+      navigate('home');
+      if(CLOUD_ENABLED && fbAuth && !fbUser){ fbAuth.signInAnonymously().catch(function(){}); }
+      return;
+    }
+    if(S.pin !== pinBuf){
+      draft.pinError = 'Wrong PIN — try again';
+      pinBuf=''; render(); return;
+    }
+    S.loggedIn=true; save(); pinBuf=''; draft.pinError='';
+    navigate('home');
+    if(CLOUD_ENABLED && fbAuth && !fbUser){ fbAuth.signInAnonymously().catch(function(){}); }
+  },
+  startChangePin: function(){ pinMode='change'; pinBuf=''; draft.pinError=''; navigate('login'); },
+  cancelChangePin: function(){ pinMode='login'; pinBuf=''; navigate('settings'); },
+  toggleLang: function(){ S.lang = S.lang==='hi'?'en':'hi'; save(); render(); },
+  setLang: function(lang){ S.lang = lang; save(); render(); },
+  setSpeechLang: function(lang){ S.speechLang = lang; save(); render(); },
+  signOut: function(){ S.loggedIn=false; save(); navigate('login'); },
+  exportData: function(){
+    downloadFile('sahayak-export-'+Date.now()+'.json', 'application/json',
+      JSON.stringify({exportedAt:new Date().toISOString(),worker:S.worker,patients:S.patients},null,2));
+  },
+  exportCSV: function(){
+    function cell(v){
+      var s = (v==null) ? '' : String(v);
+      if(typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = "'" + s; // stop spreadsheet formula injection
+      return '"' + s.replace(/"/g,'""') + '"';
+    }
+    var head = ['id','date','time','name','age','sex','village','urgency','reasons','transcript','chw_notes','temp_c','pulse_bpm','spo2_pct','lat','lng','treated','synced','doctor_note'];
+    var rows = S.patients.map(function(p){
+      var d = new Date(p.ts), v = p.vitals || {};
+      return [
+        p.id, d.toLocaleDateString('en-CA'), pad2(d.getHours())+':'+pad2(d.getMinutes()), p.name, p.age, p.sex, p.village, p.level,
+        (p.reasons||[]).map(function(r){ return r.phrase; }).join('; '), p.transcript, p.notes,
+        v.temp, v.pulse, v.spo2, p.gps ? p.gps.lat : '', p.gps ? p.gps.lng : '',
+        p.treated ? 'yes' : 'no', p.synced ? 'yes' : 'no', p.doctorNote
+      ].map(cell).join(',');
+    });
+    downloadFile('sahayak-patients-'+Date.now()+'.csv', 'text/csv;charset=utf-8',
+      '﻿' + [head.join(',')].concat(rows).join('\r\n'));
+  },
+  shareWhatsApp: function(){
+    var r = draft.result;
+    if(!r) return;
+    var dt = new Date(r.ts);
+    var lines = [
+      '*SAHAYAK REFERRAL SLIP*',
+      'Worker: '+S.worker.id+' | Village: '+r.village,
+      'Patient: '+(r.name ? r.name+', ' : '')+r.age+' yrs, '+r.sex,
+      'Date: '+dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+' '+pad2(dt.getHours())+':'+pad2(dt.getMinutes()),
+      '*URGENCY: '+r.level+'*'
+    ];
+    if(r.reasons && r.reasons.length) lines.push('Reasons: '+r.reasons.map(function(x){ return cap(x.phrase); }).join(', '));
+    if(r.vitals) lines.push('Vitals: '+vitalsText(r.vitals));
+    if(r.transcript) lines.push('Symptoms: "'+r.transcript+'"');
+    if(r.notes) lines.push('CHW notes: '+r.notes);
+    if(r.gps) lines.push('Location: https://maps.google.com/?q='+r.gps.lat+','+r.gps.lng);
+    lines.push('PHC: '+PHC_PHONE, '_This is not a diagnosis._');
+    window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
+  },
+  setHistSearch: function(v){
+    S.histSearch = v; save();
+    var list = document.getElementById('hist-list');
+    if(list) list.innerHTML = histListHtml(); else render();
+    var clr = document.getElementById('hist-clear');
+    if(clr) clr.hidden = !v;
+  },
+  clearHistSearch: function(){
+    var inp = document.getElementById('hist-q');
+    if(inp){ inp.value = ''; inp.focus(); }
+    App.setHistSearch('');
+  },
+  getGPS: function(){
+    if(!navigator.geolocation){ return; }
+    navigator.geolocation.getCurrentPosition(function(pos){
+      draft.gps = {lat:pos.coords.latitude, lng:pos.coords.longitude, acc:pos.coords.accuracy};
+      render();
+    }, function(){ render(); }, {enableHighAccuracy:true, timeout:8000});
+    render(); // show loading state
+  },
+  capturePhoto: function(input){
+    var file = input.files && input.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var MAX=320, canvas=document.createElement('canvas');
+        var ratio=Math.min(MAX/img.width, MAX/img.height);
+        canvas.width=Math.round(img.width*ratio); canvas.height=Math.round(img.height*ratio);
+        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+        draft.photo = canvas.toDataURL('image/jpeg',0.7);
+        render();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  },
+  setName: function(v){
+    draft.name = v;
+    var nameOk = v.trim().length > 0;
+    var wrap = document.getElementById('name-wrap');
+    if(wrap){ wrap.classList.toggle('is-ok', nameOk); wrap.classList.toggle('is-err', !nameOk && !!draft.nameTouched); }
+    var ck = document.getElementById('name-check');
+    if(ck) ck.hidden = !nameOk;
+    var errEl = document.getElementById('name-error');
+    if(errEl) errEl.hidden = !(draft.nameTouched && !nameOk);
+    var cont = document.getElementById('continue-btn');
+    if(cont) cont.disabled = !nameOk;
+  },
+  touchName: function(){
+    draft.nameTouched = true;
+    var nameOk = (draft.name || '').trim().length > 0;
+    var wrap = document.getElementById('name-wrap');
+    if(wrap) wrap.classList.toggle('is-err', !nameOk);
+    var errEl = document.getElementById('name-error');
+    if(errEl) errEl.hidden = nameOk;
+  },
+  setNotes: function(v){ draft.notes = v; },
+  setVital: function(key, el){
+    var clean = el.value.replace(/[^0-9.]/g,'');
+    if(clean !== el.value) el.value = clean;
+    draft[key] = clean;
+    var h = document.getElementById('vitals-hint');
+    if(h) h.innerHTML = vitalsHintHtml();
+  },
+  backResult: function(){ navigate('result'); },
+  toggleTreated: function(id){
+    var p = S.patients.find(function(x){ return x.id===id; });
+    if(p){
+      p.treated = !p.treated; save();
+      if(CLOUD_ENABLED && db && p.synced){
+        db.collection('patients').doc(p.id).update({treated:p.treated}).catch(function(){ p.synced = false; save(); });
+      }
+    }
+    // also update draft.result in place so toggle re-renders without navigate
+    if(draft.result && draft.result.id === id) draft.result = p;
+    render();
+  },
+  confirmDelete: function(id){
+    if(!window.confirm('Delete this patient record? This cannot be undone.')) return;
+    S.patients = S.patients.filter(function(x){ return x.id !== id; });
+    save();
+    navigate('history');
+  },
+  toggleSync: function(){
+    if(S.syncedFlash) return;
+    if(!CLOUD_ENABLED || !db){
+      // Offline demo flash (no Firebase configured)
+      var p = pendingCount();
+      if(p===0) return;
+      S.patients.forEach(function(pt){ pt.synced = true; });
+      S.syncedFlash = true; save(); render();
+      setTimeout(function(){ S.syncedFlash = false; save(); render(); }, 1800);
+      return;
+    }
+    // Real Firestore batch upload
+    var unsynced = S.patients.filter(function(pt){ return !pt.synced; });
+    if(!unsynced.length){
+      S.syncedFlash = true; render();
+      setTimeout(function(){ S.syncedFlash = false; render(); }, 1800);
+      return;
+    }
+    var batch = db.batch();
+    unsynced.forEach(function(pt){
+      var doc = Object.assign({}, pt);
+      delete doc.photo;
+      doc.workerId = S.worker.id;
+      doc.workerVillage = S.worker.village;
+      doc.syncedAt = firebase.firestore.FieldValue.serverTimestamp();
+      batch.set(db.collection('patients').doc(pt.id), doc, {merge:true});
+    });
+    batch.commit().then(function(){
+      unsynced.forEach(function(pt){ pt.synced = true; });
+      S.syncedFlash = true; save(); render();
+      setTimeout(function(){ S.syncedFlash = false; save(); render(); }, 1800);
+    }).catch(function(e){
+      alert('Cloud sync failed: '+(e.message||'check connection and Firestore rules'));
+    });
+  },
+  cloudConnect: function(){
+    if(!CLOUD_ENABLED || !fbAuth) return;
+    fbAuth.signInAnonymously().catch(function(e){
+      alert('Firebase sign-in failed: '+(e.message||e));
+    });
+  },
+  tab: function(name){ navigate(name); },
+  startNewPatient: function(){
+    draft = { name:'', nameTouched:false, age:8, sex:'Female', village:S.worker.village, notes:'', photo:null, gps:null, temp:'', pulse:'', spo2:'' };
+    navigate('patient');
+  },
+  ageStep: function(d){ draft.age = Math.max(0, Math.min(99, draft.age+d)); render(); },
+  ageBand: function(v){ draft.age = v; render(); },
+  setSex: function(v){ draft.sex = v; render(); },
+  setVillage: function(v){ draft.village = v; render(); },
+  toContinuePatient: function(){ navigate('voiceReady'); },
+  startRecording: function(){ draft.retryHint = false; navigate('recording'); },
+  startTyping: function(){ draft.typedText = draft.typedText || ''; navigate('typeSymptoms'); },
+  backToVoice: function(){ navigate('voiceReady'); },
+  setSymptomText: function(el){
+    draft.typedText = el.value; syncTypeContinue();
+    var live = document.getElementById('sym-live');
+    if(live) live.innerHTML = liveDetectHtml(el.value);
+  },
+  addQuick: function(i){
+    var ph = (QUICK[S.speechLang] || QUICK.en)[i];
+    if(!ph) return;
+    var cur = (draft.typedText || '').replace(/[\s,]+$/, '');
+    draft.typedText = cur ? cur + ', ' + ph : ph;
+    var t = document.getElementById('sym-text');
+    if(t){ t.value = draft.typedText; t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+    syncTypeContinue();
+    var live = document.getElementById('sym-live');
+    if(live) live.innerHTML = liveDetectHtml(draft.typedText);
+  },
+  submitTyped: function(){
+    var text = (draft.typedText || '').trim();
+    if(!text) return;
+    draft.finalText = text;
+    draft.forceUncertain = false;
+    navigate('processing');
+  },
+  stopRecording: function(){
+    var rc = recCtx;
+    var heard = rc ? rc.finalTranscript.trim() : '';
+    var avgConf = (rc && rc.confCount) ? (rc.confSum / rc.confCount) : null;
+    var recognitionUsable = !!(rc && rc.recognition && rc.recognitionFatal !== 'not-allowed' && rc.recognitionFatal !== 'service-not-allowed' && rc.recognitionFatal !== 'start-failed');
+    cleanupRecording();
+
+    if(recognitionUsable){
+      if(heard.length > 1){
+        var low = (avgConf !== null && avgConf < 0.7);
+        var pending = { t: heard, low: low, source:'live' };
+        if(low){ var m = maskGeneric(heard); pending.maskedHtml = m.html; pending.maskedCount = m.count; }
+        draft.pending = pending;
+        navigate('confirm');
+        return;
+      }
+      // Recognition was running but nothing was heard — ask to retry rather
+      // than quietly substituting a demo transcript for real silence.
+      draft.retryHint = true;
+      navigate('voiceReady');
+      return;
+    }
+    // No live recognition on this device/browser (or mic denied) — clearly
+    // labeled demo fallback, never presented as if it were heard.
+    var c = CASES[Math.floor(Math.random()*CASES.length)];
+    var demoPending = { t: c.t, low: c.low, source:'demo' };
+    if(c.low){ demoPending.maskedHtml = c.maskedHtml; demoPending.maskedCount = c.maskedCount; }
+    draft.pending = demoPending;
+    navigate('confirm');
+  },
+  confirmCorrect: function(){
+    draft.finalText = draft.pending.t;
+    draft.forceUncertain = false;
+    navigate('processing');
+  },
+  confirmRepeat: function(){ navigate('voiceReady'); },
+  confirmContinueAnyway: function(){
+    draft.finalText = draft.pending.t;
+    draft.forceUncertain = true;
+    navigate('processing');
+  },
+  finishProcessing: function(){
+    var c = classify(draft.finalText || '');
+    var level = draft.forceUncertain ? 'UNCERTAIN' : c.level;
+    var reasons = draft.forceUncertain ? [] : c.reasons;
+    var vitals = parseVitals(draft);
+    var vf = vitalFlags(vitals, draft.age);
+    if(vf.some(function(f){ return f.sev==='red'; })) level = 'HIGH';
+    else if(vf.length && (level==='LOW' || level==='UNCERTAIN')) level = 'MEDIUM';
+    reasons = vf.map(function(f){ return {phrase:f.phrase, color:f.sev==='red'?'var(--coral)':'var(--amber)'}; }).concat(reasons).slice(0,4);
+    var advice = S.lang === 'hi'
+      ? (level==='HIGH'
+          ? 'तुरंत नज़दीकी PHC जाएं। देरी न करें।'
+          : level==='MEDIUM'
+            ? 'आज शाम चार बजे तक sub-centre में जाएं।'
+            : 'घर पर आराम करें, पानी और खाना लें। तीन दिन में ठीक न हो तो दोबारा दिखाएं।')
+      : (level==='HIGH'
+          ? 'Go to the nearest PHC now. Do not wait.'
+          : level==='MEDIUM'
+            ? 'Come to the sub-centre by four PM today for a review.'
+            : 'Rest, drink fluids, and eat normally. Check again in three days if symptoms continue.');
+    var record = {
+      id: 'p'+Date.now(),
+      age: draft.age, sex: draft.sex, village: draft.village,
+      ts: Date.now(), level: level, reasons: reasons, advice: advice,
+      transcript: draft.finalText, synced: false,
+      name: draft.name || '',
+      notes: draft.notes || '',
+      photo: draft.photo || null,
+      gps: draft.gps || null,
+      vitals: hasAnyVital(vitals) ? vitals : null,
+      vitalFlagKeys: vf.map(function(f){ return f.key; }),
+      treated: false
+    };
+    S.patients.unshift(record);
+    save();
+    if(CLOUD_ENABLED && db){
+      var _rec = Object.assign({}, record);
+      delete _rec.photo; // photos stay on-device to keep Firestore lean
+      _rec.workerId = S.worker.id;
+      _rec.workerVillage = S.worker.village;
+      _rec.savedAt = firebase.firestore.FieldValue.serverTimestamp();
+      db.collection('patients').doc(record.id).set(_rec, {merge:true})
+        .then(function(){
+          record.synced = true; save();
+          if(screen==='result' || screen==='home' || screen==='history') safeRender();
+        })
+        .catch(function(){});
+    }
+    draft.result = record;
+    draft.viewOnly = false;
+    navigate('result');
+  },
+  finishCase: function(){ navigate('home'); },
+  sendForReview: function(){ navigate('queued'); },
+  recordAgainFromUncertain: function(){ navigate('voiceReady'); },
+  backHome: function(){ navigate('home'); },
+  backTo: function(name){ navigate(name); },
+  openHistoryItem: function(id){
+    var p = S.patients.find(function(x){ return x.id===id; });
+    if(!p) return;
+    draft.result = p;
+    draft.viewOnly = true;
+    navigate('result');
+  },
+  play: function(text){ speak(text); },
+  playPrompt: function(){ speak('Please describe the symptoms'); },
+  playPending: function(){ if(draft.pending) speak(draft.pending.t); },
+  playAdvice: function(){ if(draft.result) speak(draft.result.advice); },
+  playScript: function(){ speak(QUEUE_SCRIPT); },
+  showSlip: function(){ navigate('slip'); }
+};
+
+render();
+setInterval(function(){ if(screen!=='recording' && screen!=='processing') safeRender(); }, 30000);
+})();
+</script>
+</body>
+</html>

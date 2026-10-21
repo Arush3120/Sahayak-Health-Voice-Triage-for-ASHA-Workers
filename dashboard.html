@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05161C">
+<title>Sahayak · PHC Dashboard</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha384-bs/nf9FbdNouRbMiFcrcZfLXYPKiPaGVGplVbv7dLGECccEXDW+S3zjqSKR5ZEaD" crossorigin="anonymous"></script>
+<style>
+:root{
+  --ink-950:#05161C; --ink-900:#082028; --ink-800:#0F3540; --ink-700:#174654;
+  --paper:#F3EFE6; --paper-2:#E9E3D6; --card:#FFFFFF; --text:#0A2530; --text-2:#33505B; --text-3:#4F6871; --line:rgba(10,37,48,.10); --line-2:rgba(10,37,48,.18);
+  --teal:#0E9F95; --teal-600:#0A7F77; --teal-700:#075F59; --teal-300:#5FE3D0; --teal-100:#D9F3EE; --saffron-300:#FFB673;
+  --crit:#E5484D; --crit-700:#A61D25; --crit-100:#FCE5E5; --warn:#F2A516; --warn-700:#7A4E00; --warn-100:#FCEFD2; --ok:#1FA971; --ok-700:#0A6340; --ok-100:#DAF2E6; --unk:#7B6CF6;
+  --on-dark:#E6F1F2; --on-dark-2:#A9C0C5; --glass:rgba(255,255,255,.05); --glass-b:rgba(255,255,255,.10);
+  --navy:var(--text); --coral:var(--crit); --coral-d:var(--crit-700); --amber:var(--warn); --amber-d:var(--warn-700); --mint:#3FC7A8; --mint-d:var(--ok-700); --teal-d:var(--teal-600);
+  --font-display:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif; --font-body:'IBM Plex Sans',system-ui,sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --jaali:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-opacity='0.07' stroke-width='1'%3E%3Cpath d='M32 0L64 32L32 64L0 32Z'/%3E%3Cpath d='M32 12L52 32L32 52L12 32Z'/%3E%3Ccircle cx='32' cy='32' r='6'/%3E%3C/g%3E%3C/svg%3E");
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--ink-950);color:var(--on-dark);-webkit-font-smoothing:antialiased;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;z-index:-2;background:radial-gradient(50% 42% at 8% 0%,rgba(14,159,149,.34),transparent 70%),radial-gradient(40% 40% at 96% 8%,rgba(123,108,246,.2),transparent 70%),radial-gradient(40% 40% at 90% 100%,rgba(255,138,43,.16),transparent 70%),var(--ink-950)}
+body::after{content:'';position:fixed;inset:0;z-index:-1;background:var(--jaali);-webkit-mask-image:radial-gradient(80% 60% at 50% 0%,#000,transparent);mask-image:radial-gradient(80% 60% at 50% 0%,#000,transparent)}
+.mono{font-family:var(--font-mono)}
+a{color:var(--teal-600);text-decoration:underline}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--teal-300);outline-offset:2px}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes ecg{from{stroke-dashoffset:900}to{stroke-dashoffset:0}}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes slidein{from{opacity:0;transform:translateX(26px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes rowflash{0%,40%{background:rgba(229,72,77,.28)}100%{background:transparent}}
+@keyframes sheen{0%{transform:translateX(-120%) skewX(-18deg)}60%,100%{transform:translateX(260%) skewX(-18deg)}}
+
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:16px;height:70px;padding:0 34px;background:rgba(5,22,28,.72);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-bottom:1px solid var(--glass-b)}
+.brand{display:flex;align-items:center;gap:14px}
+.brand svg{filter:drop-shadow(0 6px 16px rgba(14,159,149,.5))}
+.brand h1{font:800 24px/1 var(--font-display);letter-spacing:-.03em;color:#fff}
+.brand .tag{font:600 10px var(--font-mono);letter-spacing:.2em;color:var(--teal-300);margin-top:5px}
+.spacer{flex:1}
+.live-pill{display:inline-flex;align-items:center;gap:10px;height:38px;padding:0 16px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-b)}
+.status-dot{width:9px;height:9px;border-radius:50%;background:#8FA5AC}
+.status-dot.live{background:var(--teal-300);box-shadow:0 0 0 4px rgba(95,227,208,.2),0 0 14px var(--teal-300);animation:blip 2s ease-in-out infinite}
+.status-lbl{font:600 13px var(--font-body);color:var(--on-dark)}
+.main{max-width:1200px;margin:0 auto;padding:34px 28px 60px}
+.hero-d{position:relative;overflow:hidden;isolation:isolate;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:30px 34px 34px;margin-bottom:22px;border-radius:30px;background:radial-gradient(90% 120% at 100% 0%,rgba(14,159,149,.5),transparent 60%),linear-gradient(160deg,var(--ink-800),var(--ink-900));border:1px solid var(--glass-b);box-shadow:0 30px 60px -30px rgba(0,0,0,.7);animation:rise .6s both}
+.hero-d::before{content:'';position:absolute;inset:0;background:var(--jaali);z-index:-1}
+.hero-d .eyebrow{font:600 11px var(--font-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--teal-300)}
+.hero-d h2{font:800 42px/1.02 var(--font-display);letter-spacing:-.035em;margin-top:10px;color:#fff}
+.hero-d h2 span{background:linear-gradient(100deg,var(--teal-300),#C1FFF4 50%,var(--saffron-300));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-d p{max-width:520px;margin-top:12px;font:400 15px/1.6 var(--font-body);color:var(--on-dark-2)}
+.hero-d svg.ecg{position:absolute;left:0;right:0;bottom:0;width:100%;height:56px;opacity:.75;z-index:-1}
+.hero-d svg.ecg path{fill:none;stroke:var(--teal-300);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:240 960;animation:ecg 5s linear infinite;filter:drop-shadow(0 0 6px rgba(95,227,208,.9))}
+.hero-d svg.ecg path.base{stroke:rgba(95,227,208,.16);stroke-dasharray:none;animation:none;filter:none}
+.setup-notice{background:rgba(242,165,22,.12);border:1.5px solid rgba(242,165,22,.5);border-radius:18px;padding:20px 24px;margin-bottom:22px;color:#FFD58A}
+.setup-notice h3{font:700 17px var(--font-display);margin-bottom:6px}
+.setup-notice p{font:400 14px/1.6 var(--font-body)}
+.setup-notice code{font-family:var(--font-mono);font-size:12px;background:rgba(242,165,22,.2);padding:2px 6px;border-radius:4px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+@media(max-width:820px){.stats{grid-template-columns:repeat(2,1fr)}.hero-d h2{font-size:32px}.topbar{padding:0 16px}.main{padding:20px 14px 40px}}
+.stat-card{position:relative;overflow:hidden;isolation:isolate;padding:20px 20px 18px;border-radius:24px;background:var(--glass);border:1px solid var(--glass-b);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);animation:rise .6s both}
+.stat-card:nth-child(2){animation-delay:.06s}.stat-card:nth-child(3){animation-delay:.12s}.stat-card:nth-child(4){animation-delay:.18s}
+.stat-card::before{content:'';position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:var(--glow,transparent);filter:blur(34px);opacity:.55;z-index:-1}
+.stat-card .val{font:800 50px/1 var(--font-display);letter-spacing:-.04em;color:#fff}
+.stat-card .lbl{font:600 12px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--on-dark-2);margin-top:12px}
+.stat-card.total{--glow:var(--teal)}
+.stat-card.high{--glow:var(--crit)}.stat-card.high .val{color:#FF8E91}
+.stat-card.med{--glow:var(--warn)}.stat-card.med .val{color:#FFD27A}
+.stat-card.ok{--glow:var(--ok)}.stat-card.ok .val{color:#7FE3B6}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+@media(max-width:860px){.charts{grid-template-columns:1fr}}
+.chart-card{padding:20px 22px 14px;border-radius:26px;background:var(--glass);border:1px solid var(--glass-b);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);animation:rise .6s .2s both}
+.chart-card h2{font:700 17px var(--font-display);letter-spacing:-.01em;color:#fff}
+.chart-card .sub{font:600 10.5px var(--font-mono);letter-spacing:.16em;color:var(--teal-300);margin:4px 0 14px}
+.chart-box{position:relative;height:240px}
+.chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:500 14px var(--font-body);color:var(--on-dark-2);pointer-events:none}
+.chart-empty[hidden]{display:none}
+.filters{display:flex;gap:9px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-btn{height:40px;padding:0 18px;border-radius:999px;border:1px solid var(--glass-b);background:var(--glass);font:600 13px var(--font-body);color:var(--on-dark);cursor:pointer;transition:all .15s}
+.filter-btn:hover{border-color:var(--teal-300);color:#fff}
+.filter-btn.active{background:#fff;border-color:#fff;color:var(--ink-900)}
+.filter-btn.active.high{background:var(--crit);border-color:var(--crit);color:#fff;box-shadow:0 8px 24px -8px var(--crit)}
+.filter-btn.active.med{background:var(--warn);border-color:var(--warn);color:#2B1B00;box-shadow:0 8px 24px -8px var(--warn)}
+.filter-btn.active.low{background:var(--ok);border-color:var(--ok);color:#fff;box-shadow:0 8px 24px -8px var(--ok)}
+.search-box{flex:1;min-width:200px;height:40px;border-radius:999px;border:1px solid var(--glass-b);background:var(--glass);padding:0 18px;font:500 14px var(--font-body);color:#fff;outline:none}
+.search-box::placeholder{color:var(--on-dark-2)}
+.search-box:focus{border-color:var(--teal-300);box-shadow:0 0 0 4px rgba(95,227,208,.15)}
+#count-lbl{font:600 11px var(--font-mono);letter-spacing:.08em;color:var(--on-dark-2);white-space:nowrap}
+.table-wrap{border-radius:26px;background:var(--glass);border:1px solid var(--glass-b);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);overflow:hidden;animation:rise .6s .26s both}
+table{width:100%;border-collapse:collapse}
+thead th{padding:16px 18px;text-align:left;font:600 10.5px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--teal-300);border-bottom:1px solid var(--glass-b);background:rgba(255,255,255,.03);white-space:nowrap}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.06);transition:background .12s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(95,227,208,.08)}
+tbody tr.flash{animation:rowflash 3s ease-out}
+td{padding:15px 18px;font:400 14px var(--font-body);color:var(--on-dark);vertical-align:middle}
+.name-cell{font:600 15.5px var(--font-body);color:#fff}
+.sub-cell{font:500 12px var(--font-mono);color:var(--on-dark-2);margin-top:3px}
+.badge{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 12px;border-radius:999px;font:700 11px var(--font-mono);letter-spacing:.06em}
+.badge.HIGH{background:rgba(229,72,77,.18);color:#FF9A9D}.badge.MEDIUM{background:rgba(242,165,22,.18);color:#FFD27A}.badge.LOW{background:rgba(31,169,113,.2);color:#86E9BC}.badge.UNCERTAIN{background:rgba(123,108,246,.22);color:#C4BCFF}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.dot.HIGH{background:var(--crit);box-shadow:0 0 10px var(--crit)}.dot.MEDIUM{background:var(--warn);box-shadow:0 0 10px var(--warn)}.dot.LOW{background:var(--ok);box-shadow:0 0 10px var(--ok)}.dot.UNCERTAIN{background:var(--unk);box-shadow:0 0 10px var(--unk)}
+.treated-pill,.note-pill{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font:700 10px var(--font-mono);letter-spacing:.06em;margin-right:5px}
+.treated-pill{background:rgba(31,169,113,.2);color:#86E9BC}.note-pill{background:rgba(14,159,149,.22);color:var(--teal-300)}
+.pending-lbl{font:500 12px var(--font-mono);color:var(--on-dark-2)}
+.reason-tag{display:inline-block;padding:3px 9px;border-radius:8px;background:rgba(255,255,255,.08);font:500 12px var(--font-body);color:var(--on-dark);margin:2px 3px 0 0}
+.ts{font:500 12px var(--font-mono);color:var(--on-dark-2);white-space:nowrap}
+.empty{padding:64px 24px;text-align:center}
+.empty h3{font:700 19px var(--font-display);color:#fff;margin-bottom:8px}
+.empty p{font:400 14px var(--font-body);color:var(--on-dark-2)}
+.loading{padding:64px 24px;text-align:center;font:500 15px var(--font-body);color:var(--on-dark-2)}
+.hint{margin-top:14px;font:500 12px var(--font-mono);color:var(--on-dark-2)}
+#toasts{position:fixed;top:84px;right:22px;z-index:300;display:flex;flex-direction:column;gap:10px;width:min(390px,calc(100vw - 44px))}
+.toast{position:relative;overflow:hidden;display:flex;gap:14px;align-items:flex-start;width:100%;text-align:left;border:none;cursor:pointer;background:linear-gradient(135deg,#F0575C,#B3232B);color:#fff;border-radius:20px;padding:16px 18px;box-shadow:0 24px 50px -16px rgba(229,72,77,.7);font:500 14px/1.45 var(--font-body);animation:slidein .4s cubic-bezier(.2,.9,.3,1.2)}
+.toast::after{content:'';position:absolute;top:0;bottom:0;left:0;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:sheen 2.4s ease-in-out infinite}
+.toast b{font:700 15px var(--font-display)}
+.toast .tdot{width:12px;height:12px;border-radius:50%;background:#fff;flex:none;margin-top:5px;box-shadow:0 0 0 5px rgba(255,255,255,.25);animation:blip 1.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important}}
+/* case drawer */
+.overlay{position:fixed;inset:0;background:rgba(3,12,16,.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--paper);color:var(--text);border-radius:30px;width:100%;max-width:620px;max-height:92vh;overflow-y:auto;box-shadow:0 40px 90px -20px rgba(0,0,0,.8);animation:rise .35s both}
+.modal-head{position:relative;isolation:isolate;overflow:hidden;padding:22px 26px 20px;display:flex;align-items:flex-start;gap:12px;color:#fff;background:radial-gradient(90% 120% at 100% 0%,rgba(14,159,149,.5),transparent 60%),linear-gradient(160deg,var(--ink-800),var(--ink-900))}
+.modal-head::before{content:'';position:absolute;inset:0;background:var(--jaali);z-index:-1}
+.modal-head h2{font:800 24px/1.15 var(--font-display);letter-spacing:-.025em}
+.modal-head .meta{font:500 12.5px var(--font-mono);color:var(--on-dark-2);margin-top:6px}
+.modal-head .grow{flex:1;min-width:0}
+.x-btn{width:40px;height:40px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);font-size:22px;line-height:1;color:#fff;cursor:pointer;flex:none}
+.x-btn:hover{background:rgba(255,255,255,.2)}
+.modal-body{padding:22px 26px 28px;display:flex;flex-direction:column;gap:18px}
+.sec-lbl{font:600 10.5px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--text-3);margin-bottom:7px}
+.quote{font:400 15.5px/1.65 var(--font-body);background:#fff;border-radius:16px;padding:13px 16px;white-space:pre-wrap;word-break:break-word;box-shadow:0 1px 2px rgba(10,37,48,.06)}
+.modal .reason-tag{background:var(--teal-100);color:var(--teal-700);font-weight:600}
+.vts{display:flex;gap:8px}
+.vt{flex:1;border-radius:18px;padding:12px 6px 10px;text-align:center;background:#fff;border:1.5px solid transparent}
+.vt.bad{background:var(--crit-100);border-color:rgba(229,72,77,.35)}
+.vt-val{font:800 24px/1 var(--font-display);letter-spacing:-.02em}.vt.bad .vt-val{color:var(--crit-700)}
+.vt-val small{font:600 11px var(--font-mono);margin-left:2px;color:var(--text-3)}
+.vt-lbl{font:600 9.5px var(--font-mono);letter-spacing:.12em;color:var(--text-3);margin-top:7px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.info-grid div div:last-child{font:600 14.5px var(--font-body);word-break:break-word}
+.note-box{border:1.5px solid rgba(14,159,149,.38);background:linear-gradient(150deg,#E4F7F3,#fff 75%);border-radius:22px;padding:16px 18px}
+.note-box textarea{width:100%;min-height:100px;border-radius:16px;border:2px solid var(--line);background:#fff;padding:12px 14px;font:400 15px/1.55 var(--font-body);color:var(--text);resize:vertical;outline:none}
+.note-box textarea:focus{border-color:var(--teal);box-shadow:0 0 0 5px rgba(14,159,149,.14)}
+.note-actions{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.btn-save{height:46px;padding:0 24px;border-radius:16px;border:none;background:linear-gradient(135deg,#16B9AB,#0A7A72);color:#fff;font:700 15px var(--font-display);cursor:pointer;box-shadow:0 14px 26px -14px rgba(14,159,149,.9)}
+.btn-save:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+#note-status{font:600 13px var(--font-body);color:var(--text-2)}#note-status.ok{color:var(--ok-700)}#note-status.err{color:var(--crit-700)}
+.modal .badge.HIGH{background:var(--crit-100);color:var(--crit-700)}.modal .badge.MEDIUM{background:var(--warn-100);color:var(--warn-700)}.modal .badge.LOW{background:var(--ok-100);color:var(--ok-700)}.modal .badge.UNCERTAIN{background:#ECE9FE;color:#4436B0}
+@media(max-width:860px){.hide-md{display:none}}
+@media(max-width:600px){.hide-sm{display:none}.info-grid{grid-template-columns:1fr}.hero-d{padding:22px}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg width="42" height="42" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="dlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7FF0DE"/><stop offset=".5" stop-color="#0E9F95"/><stop offset="1" stop-color="#075F59"/></linearGradient></defs><rect width="48" height="48" rx="15" fill="url(#dlg)"/><path d="M7 26.5h8.5l3.2-7.5 5.3 14 4-10.5 2.3 4H41" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="37.5" cy="13" r="3.4" fill="#FFB673"/></svg>
+    <div><h1>Sahayak</h1><div class="tag">PHC COMMAND CENTER</div></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="live-pill"><span id="status-dot" class="status-dot"></span><span id="status-lbl" class="status-lbl" role="status">Connecting…</span></div>
+</header>
+
+<div id="toasts" aria-live="assertive"></div>
+
+<div class="main">
+
+  <!-- Setup notice — shown when Firebase is not configured -->
+  <div id="setup-notice" class="setup-notice" style="display:none">
+    <h3>Firebase not configured</h3>
+    <p>Open <code>dashboard.html</code> and set your Firebase project config in the <code>FIREBASE_CONFIG</code> block at the top of the script. The same config goes in <code>index.html</code>. See the README or the comment block for setup steps.</p>
+  </div>
+
+  <section class="hero-d">
+    <div>
+      <div class="eyebrow">Live caseload</div>
+      <h2>Every ASHA worker,<br><span>one real-time view.</span></h2>
+      <p>Cases appear the moment a health worker finishes triage. Open a row to read the full story and send guidance straight back to their phone.</p>
+    </div>
+    <svg class="ecg" viewBox="0 0 1200 56" preserveAspectRatio="none" aria-hidden="true"><path class="base" d="M0 40H330l10-8 10 8h20l12 14 16-46 16 52 12-20 8 8H760l10-6 10 6H1200"/><path d="M0 40H330l10-8 10 8h20l12 14 16-46 16 52 12-20 8 8H760l10-6 10 6H1200"/></svg>
+  </section>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card total"><div class="val" id="stat-total">—</div><div class="lbl">Total patients</div></div>
+    <div class="stat-card high"><div class="val" id="stat-high">—</div><div class="lbl">High urgency</div></div>
+    <div class="stat-card med"><div class="val" id="stat-med">—</div><div class="lbl">Medium urgency</div></div>
+    <div class="stat-card ok"><div class="val" id="stat-treated">—</div><div class="lbl">Treated</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts">
+    <section class="chart-card" aria-labelledby="week-h">
+      <h2 id="week-h">Patients, last 7 days</h2>
+      <div class="sub">BY URGENCY</div>
+      <div class="chart-box">
+        <canvas id="week-chart" role="img" aria-label="Patients per day for the last 7 days"></canvas>
+        <div id="week-empty" class="chart-empty">No patients recorded yet</div>
+      </div>
+    </section>
+    <section class="chart-card" aria-labelledby="vil-h">
+      <h2 id="vil-h">Cases by village</h2>
+      <div class="sub">TOP 8 &middot; BY URGENCY</div>
+      <div class="chart-box">
+        <canvas id="village-chart" role="img" aria-label="Patients per village"></canvas>
+        <div id="village-empty" class="chart-empty">No patients recorded yet</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('ALL')">All</button>
+    <button class="filter-btn high" onclick="setFilter('HIGH')">HIGH</button>
+    <button class="filter-btn med" onclick="setFilter('MEDIUM')">MEDIUM</button>
+    <button class="filter-btn low" onclick="setFilter('LOW')">LOW</button>
+    <input class="search-box" type="text" id="search" placeholder="Search name, village, worker…" aria-label="Search patients" oninput="renderTable()">
+    <span id="count-lbl"></span>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div id="loading" class="loading">Connecting to Firestore…</div>
+    <table id="patient-table" style="display:none">
+      <thead>
+        <tr>
+          <th>Patient</th>
+          <th>Urgency</th>
+          <th class="hide-sm">Reasons</th>
+          <th class="hide-md">Village</th>
+          <th class="hide-md">Worker</th>
+          <th>Time</th>
+          <th class="hide-sm">Status</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty" class="empty" style="display:none">
+      <h3>No records yet</h3>
+      <p>Patient records appear here automatically once ASHA workers sync from the Sahayak app.</p>
+    </div>
+  </div>
+  <p class="hint">Select a patient row to read the full case and send a note back to the ASHA worker.</p>
+
+</div>
+
+<!-- Patient detail + doctor note -->
+<div id="overlay" class="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <div class="grow">
+        <h2 id="modal-title"></h2>
+        <div class="meta" id="modal-meta"></div>
+      </div>
+      <span id="modal-badge"></span>
+      <button type="button" class="x-btn" id="modal-x" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ─── FIREBASE CONFIG — paste the same config as in index.html ───────────────
+var FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBjBHtKyJyl2TolczqW_580tyXkiYvb49s",
+  authDomain:        "sahayak-a-health-triage.firebaseapp.com",
+  projectId:         "sahayak-a-health-triage",
+  storageBucket:     "sahayak-a-health-triage.firebasestorage.app",
+  messagingSenderId: "186970837030",
+  appId:             "1:186970837030:web:bdd7d54dac7cb9fe3f56e7"
+};
+// ────────────────────────────────────────────────────────────────────────────
+
+var CONFIGURED = !!FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+var LEVELS = ['HIGH','MEDIUM','LOW','UNCERTAIN'];
+var COLORS = {HIGH:'#E5484D', MEDIUM:'#F2A516', LOW:'#1FA971', UNCERTAIN:'#7B6CF6'};
+var allRecords = [];
+var activeFilter = 'ALL';
+var flashIds = {};
+var modalId = null, lastFocus = null;
+var weekChart = null, villageChart = null;
+var unreadHigh = 0, baseTitle = document.title;
+var db = null, auth = null, listening = false, firstSnapshot = true;
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function num(x){ var n = Number(x); return (x!=null && x!=='' && isFinite(n)) ? n : null; }
+function fmtTime(ts){
+  var n = num(ts);
+  if(n==null) return '—';
+  var d = new Date(n);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());
+}
+function levelOf(r){ return LEVELS.indexOf(r.level)!==-1 ? r.level : 'UNCERTAIN'; }
+function whoLabel(r){ return r.name ? String(r.name) : (r.age+' yrs · '+r.sex); }
+function findRec(id){
+  for(var i=0;i<allRecords.length;i++){ if(allRecords[i]._id===id) return allRecords[i]; }
+  return null;
+}
+
+function setFilter(f){
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(function(b){
+    b.classList.remove('active');
+    if((b.textContent==='All'&&f==='ALL')||(b.textContent===f)) b.classList.add('active');
+  });
+  renderTable();
+}
+
+function renderTable(){
+  var q = (document.getElementById('search').value||'').toLowerCase().trim();
+  var rows = allRecords.filter(function(r){
+    if(activeFilter !== 'ALL' && levelOf(r) !== activeFilter) return false;
+    if(!q) return true;
+    return String(r.name||'').toLowerCase().indexOf(q)!==-1 ||
+           String(r.village||'').toLowerCase().indexOf(q)!==-1 ||
+           String(r.workerId||'').toLowerCase().indexOf(q)!==-1 ||
+           String(r.transcript||'').toLowerCase().indexOf(q)!==-1;
+  });
+
+  document.getElementById('count-lbl').textContent = rows.length + ' records';
+
+  var tb = document.getElementById('tbody');
+  if(!rows.length){
+    document.getElementById('patient-table').style.display = 'none';
+    document.getElementById('empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('patient-table').style.display = 'table';
+  document.getElementById('empty').style.display = 'none';
+
+  tb.innerHTML = rows.map(function(r){
+    var lvl = levelOf(r);
+    var nameStr = r.name ? esc(r.name) : esc(r.age+' yrs · '+r.sex);
+    var subStr = r.name ? esc(r.age+' yrs · '+r.sex) : '';
+    var reasons = (Array.isArray(r.reasons)?r.reasons:[]).slice(0,3).map(function(x){ return '<span class="reason-tag">'+esc(x && x.phrase ? x.phrase : x)+'</span>'; }).join('');
+    var pills = '';
+    if(r.treated) pills += '<span class="treated-pill">✓ Treated</span>';
+    if(r.doctorNote) pills += '<span class="note-pill">Reviewed</span>';
+    if(!pills) pills = '<span class="pending-lbl">pending</span>';
+    return '<tr data-id="'+esc(r._id)+'" tabindex="0"'+(flashIds[r._id]?' class="flash"':'')+'>' +
+      '<td><div class="name-cell">'+nameStr+'</div>'+(subStr?'<div class="sub-cell">'+subStr+'</div>':'')+'</td>' +
+      '<td><span class="badge '+lvl+'"><span class="dot '+lvl+'"></span>'+lvl+'</span></td>' +
+      '<td class="hide-sm">'+(reasons||'<span class="pending-lbl">—</span>')+'</td>' +
+      '<td class="hide-md">'+esc(r.village||'—')+'</td>' +
+      '<td class="hide-md mono" style="font-size:12px">'+esc(r.workerId||r.workerVillage||'—')+'</td>' +
+      '<td class="ts">'+fmtTime(r.ts)+'</td>' +
+      '<td class="hide-sm">'+pills+'</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function updateStats(){
+  var total = allRecords.length;
+  var high = allRecords.filter(function(r){return levelOf(r)==='HIGH';}).length;
+  var med = allRecords.filter(function(r){return levelOf(r)==='MEDIUM';}).length;
+  var treated = allRecords.filter(function(r){return r.treated;}).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-high').textContent = high;
+  document.getElementById('stat-med').textContent = med;
+  document.getElementById('stat-treated').textContent = treated;
+}
+
+// ─── Charts ─────────────────────────────────────────────────────────────────
+function dayKey(ms){
+  var d = new Date(ms);
+  return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+}
+function stackedDatasets(buckets){
+  return LEVELS.map(function(l){
+    return {label:l, data:buckets[l], backgroundColor:COLORS[l], borderRadius:3, stack:'s'};
+  });
+}
+function upsertChart(existing, canvasId, config, labels, datasets){
+  if(existing){
+    existing.data.labels = labels;
+    existing.data.datasets = datasets;
+    existing.update();
+    return existing;
+  }
+  config.data = {labels:labels, datasets:datasets};
+  return new Chart(document.getElementById(canvasId), config);
+}
+function updateCharts(){
+  var weekEmpty = document.getElementById('week-empty');
+  var vilEmpty = document.getElementById('village-empty');
+  if(typeof Chart === 'undefined'){
+    weekEmpty.hidden = vilEmpty.hidden = false;
+    weekEmpty.textContent = vilEmpty.textContent = 'Charts could not load. Check your internet connection.';
+    return;
+  }
+  Chart.defaults.font.family = "'IBM Plex Sans', system-ui, sans-serif";
+  Chart.defaults.color = 'rgba(230,241,242,.75)';
+  Chart.defaults.borderColor = 'rgba(255,255,255,.08)';
+  var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var common = {responsive:true, maintainAspectRatio:false, animation: calm ? false : {duration:400},
+    plugins:{legend:{position:'bottom', labels:{boxWidth:12, boxHeight:12}}, tooltip:{mode:'index', intersect:false}}};
+
+  // 7-day trend
+  var keys = [], labels = [];
+  for(var i=6;i>=0;i--){
+    var d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-i);
+    keys.push(dayKey(d.getTime()));
+    labels.push(d.toLocaleDateString('en-IN',{weekday:'short', day:'numeric'}));
+  }
+  var wk = {}; LEVELS.forEach(function(l){ wk[l] = keys.map(function(){ return 0; }); });
+  var inWeek = 0;
+  allRecords.forEach(function(r){
+    var ts = num(r.ts);
+    if(ts==null) return;
+    var idx = keys.indexOf(dayKey(ts));
+    if(idx !== -1){ wk[levelOf(r)][idx]++; inWeek++; }
+  });
+  weekEmpty.hidden = inWeek > 0;
+  weekChart = upsertChart(weekChart, 'week-chart', {
+    type:'bar',
+    options:Object.assign({}, common, {scales:{
+      x:{stacked:true, grid:{display:false}},
+      y:{stacked:true, beginAtZero:true, ticks:{precision:0}}
+    }})
+  }, labels, stackedDatasets(wk));
+  document.getElementById('week-chart').setAttribute('aria-label',
+    'Patients per day, last 7 days: ' + labels.map(function(lb,i){
+      return lb+' '+LEVELS.reduce(function(a,l){ return a+wk[l][i]; },0);
+    }).join(', '));
+
+  // villages
+  var byV = {};
+  allRecords.forEach(function(r){
+    var v = String(r.village || 'Unknown');
+    if(!byV[v]){ byV[v] = {total:0}; LEVELS.forEach(function(l){ byV[v][l] = 0; }); }
+    byV[v].total++; byV[v][levelOf(r)]++;
+  });
+  var top = Object.keys(byV).sort(function(a,b){ return byV[b].total - byV[a].total; }).slice(0,8);
+  var vb = {}; LEVELS.forEach(function(l){ vb[l] = top.map(function(v){ return byV[v][l]; }); });
+  vilEmpty.hidden = top.length > 0;
+  villageChart = upsertChart(villageChart, 'village-chart', {
+    type:'bar',
+    options:Object.assign({}, common, {indexAxis:'y', scales:{
+      x:{stacked:true, beginAtZero:true, ticks:{precision:0}},
+      y:{stacked:true, grid:{display:false}}
+    }})
+  }, top, stackedDatasets(vb));
+  document.getElementById('village-chart').setAttribute('aria-label',
+    'Patients per village: ' + top.map(function(v){ return v+' '+byV[v].total; }).join(', '));
+}
+
+// ─── HIGH urgency alert ─────────────────────────────────────────────────────
+function showHighToast(r){
+  if(!r) return;
+  var box = document.getElementById('toasts');
+  var b = document.createElement('button');
+  b.type = 'button'; b.className = 'toast';
+  b.innerHTML = '<span class="tdot"></span><span><b>HIGH urgency · new referral</b><br>'+esc(whoLabel(r))+' · '+esc(r.village||'—')+'</span>';
+  function gone(){ if(b.parentNode) b.parentNode.removeChild(b); }
+  b.addEventListener('click', function(){ gone(); openModal(r._id); });
+  box.appendChild(b);
+  setTimeout(gone, 12000);
+  if(document.hidden){
+    unreadHigh++;
+    document.title = '('+unreadHigh+') HIGH alert · Sahayak PHC';
+  }
+}
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden){ unreadHigh = 0; document.title = baseTitle; }
+});
+
+// ─── Patient detail + doctor note ───────────────────────────────────────────
+function vtTile(label, val, unit, bad){
+  if(val==null) return '';
+  return '<div class="vt'+(bad?' bad':'')+'"><div class="vt-val">'+esc(val)+'<small>'+unit+'</small></div><div class="vt-lbl">'+label+'</div></div>';
+}
+function openModal(id){
+  var r = findRec(id);
+  if(!r) return;
+  modalId = id;
+  lastFocus = document.activeElement;
+  var lvl = levelOf(r);
+  document.getElementById('modal-title').textContent = r.name ? String(r.name) : 'Unnamed patient';
+  document.getElementById('modal-meta').textContent = (r.age+' yrs · '+r.sex+' · '+(r.village||'—'));
+  document.getElementById('modal-badge').innerHTML = '<span class="badge '+lvl+'"><span class="dot '+lvl+'"></span>'+lvl+'</span>';
+
+  var reasons = (Array.isArray(r.reasons)?r.reasons:[]).map(function(x){ return '<span class="reason-tag">'+esc(x && x.phrase ? x.phrase : x)+'</span>'; }).join('');
+  var v = (r.vitals && typeof r.vitals === 'object') ? r.vitals : null;
+  var bad = Array.isArray(r.vitalFlagKeys) ? r.vitalFlagKeys : [];
+  var vitals = v ? '<div><div class="sec-lbl">VITALS</div><div class="vts">' +
+      vtTile('TEMP', num(v.temp), '&deg;C', bad.indexOf('temp')!==-1) +
+      vtTile('PULSE', num(v.pulse), ' bpm', bad.indexOf('pulse')!==-1) +
+      vtTile('SpO&#8322;', num(v.spo2), '%', bad.indexOf('spo2')!==-1) +
+    '</div></div>' : '';
+  var lat = r.gps ? num(r.gps.lat) : null, lng = r.gps ? num(r.gps.lng) : null;
+  var loc = (lat!=null && lng!=null)
+    ? '<a href="https://www.google.com/maps?q='+lat+','+lng+'" target="_blank" rel="noopener noreferrer">Open in Maps</a>'
+    : '—';
+  var prev = r.doctorNote ? '<div class="sec-lbl">LAST NOTE SENT &middot; '+esc(fmtTime(r.doctorNoteTs))+'</div>' : '';
+
+  document.getElementById('modal-body').innerHTML =
+    '<div><div class="sec-lbl">SYMPTOMS REPORTED</div><div class="quote">'+(r.transcript?esc(r.transcript):'—')+'</div></div>' +
+    (reasons ? '<div><div class="sec-lbl">WHY THIS URGENCY</div><div>'+reasons+'</div></div>' : '') +
+    vitals +
+    (r.notes ? '<div><div class="sec-lbl">ASHA WORKER NOTES</div><div class="quote">'+esc(r.notes)+'</div></div>' : '') +
+    '<div class="info-grid">' +
+      '<div><div class="sec-lbl">WORKER</div><div>'+esc(r.workerId||'—')+'</div></div>' +
+      '<div><div class="sec-lbl">RECORDED</div><div>'+esc(fmtTime(r.ts))+'</div></div>' +
+      '<div><div class="sec-lbl">LOCATION</div><div>'+loc+'</div></div>' +
+      '<div><div class="sec-lbl">STATUS</div><div>'+(r.treated?'Treated':'Not yet marked treated')+'</div></div>' +
+    '</div>' +
+    '<div class="note-box"><label for="note-text" class="sec-lbl" style="display:block">NOTE FOR THE ASHA WORKER</label>' + prev +
+      '<textarea id="note-text" maxlength="500" placeholder="e.g. Bring the patient to the PHC now. Keep her sitting upright and give sips of water.">'+esc(r.doctorNote||'')+'</textarea>' +
+      '<div class="note-actions"><button type="button" class="btn-save" id="note-save" disabled>Send note</button><span id="note-status" role="status"></span></div>' +
+    '</div>';
+
+  var ta = document.getElementById('note-text');
+  var save = document.getElementById('note-save');
+  ta.addEventListener('input', function(){
+    save.disabled = !ta.value.trim() || ta.value.trim() === String(r.doctorNote||'').trim();
+    document.getElementById('note-status').textContent = '';
+  });
+  save.addEventListener('click', function(){ saveNote(r._id, ta, save); });
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  ta.focus();
+}
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  modalId = null;
+  if(lastFocus && lastFocus.focus) lastFocus.focus();
+}
+function saveNote(id, ta, btn){
+  var text = ta.value.trim();
+  var st = document.getElementById('note-status');
+  if(!text || !db) return;
+  btn.disabled = true;
+  st.className = ''; st.textContent = 'Sending…';
+  db.collection('patients').doc(id).update({
+    doctorNote: text,
+    doctorNoteTs: Date.now(),
+    doctorNoteAt: firebase.firestore.FieldValue.serverTimestamp(),
+    reviewed: true
+  }).then(function(){
+    st.className = 'ok'; st.textContent = 'Sent. The ASHA worker will see it on their phone.';
+  }).catch(function(e){
+    btn.disabled = false;
+    st.className = 'err'; st.textContent = 'Could not send: '+(e.code || e.message || 'check connection');
+  });
+}
+
+document.getElementById('modal-x').addEventListener('click', closeModal);
+document.getElementById('overlay').addEventListener('mousedown', function(e){
+  if(e.target === this) closeModal();
+});
+document.addEventListener('keydown', function(e){
+  if(!modalId) return;
+  if(e.key === 'Escape'){ closeModal(); return; }
+  if(e.key === 'Tab'){
+    var f = document.querySelectorAll('#overlay button:not([disabled]), #overlay a[href], #overlay textarea');
+    if(!f.length) return;
+    var first = f[0], last = f[f.length-1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  }
+});
+var tbodyEl = document.getElementById('tbody');
+tbodyEl.addEventListener('click', function(e){
+  var tr = e.target.closest('tr[data-id]');
+  if(tr) openModal(tr.getAttribute('data-id'));
+});
+tbodyEl.addEventListener('keydown', function(e){
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  var tr = e.target.closest('tr[data-id]');
+  if(tr){ e.preventDefault(); openModal(tr.getAttribute('data-id')); }
+});
+
+// ─── Firebase ───────────────────────────────────────────────────────────────
+function setStatus(live, text){
+  var dot = document.getElementById('status-dot');
+  var lbl = document.getElementById('status-lbl');
+  dot.className = 'status-dot' + (live?' live':'');
+  lbl.textContent = text;
+}
+
+function startListening(){
+  if(listening) return;
+  listening = true;
+  db.collection('patients').orderBy('ts', 'desc').onSnapshot(function(snap){
+    var fresh = [];
+    if(!firstSnapshot){
+      snap.docChanges().forEach(function(ch){
+        if(ch.type === 'added' && ch.doc.data().level === 'HIGH') fresh.push(ch.doc.id);
+      });
+    }
+    firstSnapshot = false;
+    allRecords = [];
+    snap.forEach(function(doc){ var r = doc.data(); r._id = doc.id; allRecords.push(r); });
+    fresh.forEach(function(id){ flashIds[id] = true; });
+    document.getElementById('loading').style.display = 'none';
+    updateStats();
+    updateCharts();
+    renderTable();
+    setStatus(true, 'Live · '+allRecords.length+' records');
+    fresh.forEach(function(id){ showHighToast(findRec(id)); });
+    flashIds = {};
+  }, function(err){
+    listening = false;
+    setStatus(false, 'Error: '+err.code);
+    document.getElementById('loading').style.display = '';
+    document.getElementById('loading').textContent = 'Firestore error: '+err.message+'. Check security rules.';
+  });
+}
+
+if(!CONFIGURED){
+  document.getElementById('setup-notice').style.display = 'block';
+  document.getElementById('loading').textContent = 'Configure Firebase to see live data.';
+  setStatus(false, 'Not configured');
+} else {
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    setStatus(false, 'Connecting…');
+    // Start listening only once signed in, so a first-time visitor's query carries a token.
+    auth.onAuthStateChanged(function(u){
+      if(u){ startListening(); }
+      else {
+        auth.signInAnonymously().catch(function(e){
+          setStatus(false, 'Sign-in failed');
+          document.getElementById('loading').textContent = 'Could not sign in: '+(e.message||e.code)+'. Enable Anonymous sign-in in Firebase Authentication.';
+        });
+      }
+    });
+  }catch(e){
+    setStatus(false, 'Init error');
+    document.getElementById('loading').textContent = 'Firebase error: '+e.message;
+  }
+}
+</script>
+</body>
+</html>
