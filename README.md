@@ -8,6 +8,8 @@ A worker speaks or types a patient's symptoms in **English, Hindi, Marathi or Be
 
 | | |
 |---|---|
+| **Worker app (AWS S3)** | https://24215111-sahayak-triage-app.s3.us-east-1.amazonaws.com/index.html |
+| **Doctor dashboard (AWS S3)** | https://24215111-sahayak-triage-app.s3.us-east-1.amazonaws.com/dashboard.html |
 | **Worker app (live)** | https://sahayak-a-health-triage.web.app |
 | **Doctor dashboard (live)** | https://sahayak-a-health-triage.web.app/dashboard |
 | **Course** | BCA482-5, Specialization Project, Christ (Deemed to be University), Delhi NCR |
